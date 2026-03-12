@@ -6,15 +6,35 @@ use App\Models\Kegiatan;
 use App\Models\Pagu;
 use App\Models\Sasaran;
 use App\Models\KegiatanAnggaran;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user      = auth()->user();
-        $tahun     = date('Y');
+        $tahunSekarang = (int) date('Y');
+        $tahunList = collect()
+            ->merge(Kegiatan::query()->distinct()->pluck('tahun_anggaran'))
+            ->merge(Pagu::query()->distinct()->pluck('tahun_anggaran'))
+            ->merge(Sasaran::query()->distinct()->pluck('tahun_anggaran'))
+            ->filter(fn ($tahun) => filled($tahun))
+            ->map(fn ($tahun) => (int) $tahun)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        $requestedTahun = $request->query('tahun');
+        $tahun = is_string($requestedTahun) && preg_match('/^\d{4}$/', $requestedTahun)
+            ? (int) $requestedTahun
+            : $tahunSekarang;
+
+        if ($tahunList->isNotEmpty() && !$tahunList->contains($tahun)) {
+            $tahun = (int) $tahunList->first();
+        }
+
         $bulanIni  = date('n');
         $today     = Carbon::today();
 
@@ -33,11 +53,27 @@ class DashboardController extends Controller
         // ── PENYERAPAN PER BULAN (chart 12 bulan) ────────────────────────
         $penyerapanPerBulan = [];
         for ($m = 1; $m <= 12; $m++) {
-            $val = KegiatanAnggaran::whereHas('kegiatan', fn($q) =>
-                $q->where('tahun_anggaran', $tahun)
-                  ->whereMonth('tanggal_mulai', $m)
+            $val = KegiatanAnggaran::whereHas('kegiatan', fn($query) =>
+                $query->where('tahun_anggaran', $tahun)
+                    ->whereMonth('tanggal_mulai', $m)
             )->sum('nominal_digunakan');
+
             $penyerapanPerBulan[] = (float) $val;
+        }
+
+        $penyerapanPerTriwulan = [];
+        for ($q = 1; $q <= 4; $q++) {
+            $bulanMulai = (($q - 1) * 3) + 1;
+            $bulanSelesai = $bulanMulai + 2;
+            $periodeMulai = Carbon::create($tahun, $bulanMulai, 1)->startOfMonth()->toDateString();
+            $periodeSelesai = Carbon::create($tahun, $bulanSelesai, 1)->endOfMonth()->toDateString();
+
+            $val = KegiatanAnggaran::whereHas('kegiatan', fn($query) =>
+                $query->where('tahun_anggaran', $tahun)
+                    ->whereBetween('tanggal_mulai', [$periodeMulai, $periodeSelesai])
+            )->sum('nominal_digunakan');
+
+            $penyerapanPerTriwulan[] = (float) $val;
         }
 
         // ── PENYERAPAN PER PAGU ───────────────────────────────────────────
@@ -71,13 +107,6 @@ class DashboardController extends Controller
         $totalKegiatan      = Kegiatan::where('tahun_anggaran', $tahun)->count();
         $kegiatanBulanIni   = Kegiatan::where('tahun_anggaran', $tahun)
                                 ->whereMonth('tanggal_mulai', $bulanIni)->count();
-        $kegiatanBerjalan   = Kegiatan::where('tahun_anggaran', $tahun)
-                                ->where('tanggal_mulai', '<=', $today)
-                                ->where('tanggal_selesai', '>=', $today)->count();
-        $kegiatanSelesai    = Kegiatan::where('tahun_anggaran', $tahun)
-                                ->where('tanggal_selesai', '<', $today)->count();
-        $kegiatanMendatang  = Kegiatan::where('tahun_anggaran', $tahun)
-                                ->where('tanggal_mulai', '>', $today)->count();
 
         // ── KEGIATAN TERBARU ──────────────────────────────────────────────
         $kegiatanTerbaru = Kegiatan::with(['sasaran', 'pagu', 'anggarans', 'createdBy.subBagian'])
@@ -87,13 +116,6 @@ class DashboardController extends Controller
             ->get();
 
         // ── KEGIATAN MENDATANG ────────────────────────────────────────────
-        $kegiatanUpcoming = Kegiatan::with(['sasaran'])
-            ->where('tahun_anggaran', $tahun)
-            ->where('tanggal_mulai', '>', $today)
-            ->orderBy('tanggal_mulai', 'asc')
-            ->limit(5)
-            ->get();
-
         // ── PENYERAPAN PER KEPEMILIKAN ────────────────────────────────────
         foreach (['lembaga', 'sekretariat'] as $kep) {
             $paguKep[$kep] = Pagu::whereHas('kegiatans', fn($q) =>
@@ -130,12 +152,11 @@ class DashboardController extends Controller
         $maxRealisasiSubBagian = $penyerapanPerSubBagian->max('total_realisasi') ?: 1;
 
         return view('admin.index', compact(
-            'user', 'tahun', 'today',
+            'user', 'tahun', 'tahunList', 'today',
             'paguTahunIni', 'realisasiTahunIni', 'sisaAnggaran', 'pctPenyerapan',
-            'penyerapanPerBulan', 'penyerapanPerPagu',
-            'totalKegiatan', 'kegiatanBulanIni', 'kegiatanBerjalan',
-            'kegiatanSelesai', 'kegiatanMendatang',
-            'kegiatanTerbaru', 'kegiatanUpcoming',
+            'penyerapanPerBulan', 'penyerapanPerTriwulan', 'penyerapanPerPagu',
+            'totalKegiatan', 'kegiatanBulanIni',
+            'kegiatanTerbaru',
             'paguKep', 'realisasiKep',
             'totalSasaran',
             'penyerapanPerSubBagian', 'maxRealisasiSubBagian'

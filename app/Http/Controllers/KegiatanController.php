@@ -10,6 +10,7 @@ use App\Models\Sasaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class KegiatanController extends Controller
 {
@@ -36,7 +37,7 @@ class KegiatanController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'tahun_anggaran'            => 'required|digits:4|integer',
             'kepemilikan'               => 'required|in:lembaga,sekretariat',
             'pagu_id'                   => 'required|exists:pagus,id',
@@ -45,15 +46,17 @@ class KegiatanController extends Controller
             'lokus'                     => 'nullable|string|max:255',
             'tanggal_mulai'             => 'required|date',
             'tanggal_selesai'           => 'required|date|after_or_equal:tanggal_mulai',
-            'output_kegiatan'           => 'nullable|string',
-            'kendala_kegiatan'          => 'nullable|string',
+            'output_kegiatan'           => 'required|string',
+            'kendala_kegiatan'          => 'required|string',
             'indikator_ids'             => 'required|array|min:1',
             'indikator_ids.*'           => 'exists:indikators,id',
             'anggaran'                  => 'nullable|array',
             'anggaran.*.pagu_detail_id' => 'required_with:anggaran|exists:pagu_details,id',
             'anggaran.*.nominal'        => 'required_with:anggaran|numeric|min:0',
-            'dokumen.*'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
+            'dokumen'                   => 'required|array|min:1',
+            'dokumen.*'                 => 'required|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
         ]);
+        $validated = $validator->validate();
 
         DB::beginTransaction();
         try {
@@ -140,7 +143,7 @@ class KegiatanController extends Controller
 
     public function update(Request $request, Kegiatan $kegiatan)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'tahun_anggaran'            => 'required|digits:4|integer',
             'kepemilikan'               => 'required|in:lembaga,sekretariat',
             'pagu_id'                   => 'required|exists:pagus,id',
@@ -149,8 +152,8 @@ class KegiatanController extends Controller
             'lokus'                     => 'nullable|string|max:255',
             'tanggal_mulai'             => 'required|date',
             'tanggal_selesai'           => 'required|date|after_or_equal:tanggal_mulai',
-            'output_kegiatan'           => 'nullable|string',
-            'kendala_kegiatan'          => 'nullable|string',
+            'output_kegiatan'           => 'required|string',
+            'kendala_kegiatan'          => 'required|string',
             'indikator_ids'             => 'required|array|min:1',
             'indikator_ids.*'           => 'exists:indikators,id',
             'anggaran'                  => 'nullable|array',
@@ -160,6 +163,16 @@ class KegiatanController extends Controller
             'hapus_dokumen.*'           => 'exists:kegiatan_dokumens,id',
             'dokumen.*'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
         ]);
+        $validator->after(function ($validator) use ($request, $kegiatan) {
+            $hapusDokumen = $request->input('hapus_dokumen', []);
+            $sisaDokumenLama = $kegiatan->dokumens()->whereNotIn('id', $hapusDokumen)->count();
+            $dokumenBaru = is_array($request->file('dokumen')) ? count(array_filter($request->file('dokumen'))) : 0;
+
+            if (($sisaDokumenLama + $dokumenBaru) < 1) {
+                $validator->errors()->add('dokumen', 'Minimal satu dokumen kegiatan wajib tersedia.');
+            }
+        });
+        $validated = $validator->validate();
 
         DB::beginTransaction();
         try {

@@ -23,14 +23,16 @@ Route::middleware(['auth'])->group(function () {
     // Satu pintu dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resource('sub-bagian', SubBagianController::class)->except(['create', 'show', 'edit']);
-    Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
-    Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
-    Route::resource('pagu', PaguController::class);
-    Route::resource('sasaran', SasaranController::class)->except(['create', 'edit', 'show']);
-    Route::patch('sasaran/{sasaran}/toggle-status', [SasaranController::class, 'toggleStatus'])->name('sasaran.toggleStatus');
+    Route::middleware(['admin'])->group(function () {
+        Route::resource('sub-bagian', SubBagianController::class)->except(['create', 'show', 'edit']);
+        Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
+        Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
+        Route::resource('sasaran', SasaranController::class)->except(['create', 'edit', 'show']);
+        Route::patch('sasaran/{sasaran}/toggle-status', [SasaranController::class, 'toggleStatus'])->name('sasaran.toggleStatus');
+    });
 
     // Module Kegiatan
+    Route::resource('pagu', PaguController::class);
     Route::resource('kegiatans', KegiatanController::class);
     Route::get('api/sasaran/{id}/indikators', [KegiatanController::class, 'getIndikators']);
     Route::get('api/pagu/{id}/details',       [KegiatanController::class, 'getPaguDetails']);

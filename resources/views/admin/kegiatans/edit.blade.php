@@ -218,12 +218,12 @@
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <div class="space-y-1.5">
-                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Output Kegiatan</label>
-                    <textarea name="output_kegiatan" rows="5" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-semibold outline-none transition-all resize-none">{{ old('output_kegiatan',$kegiatan->output_kegiatan) }}</textarea>
+                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Output Kegiatan <span class="text-red-500">*</span></label>
+                    <textarea name="output_kegiatan" rows="5" required class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-semibold outline-none transition-all resize-none">{{ old('output_kegiatan',$kegiatan->output_kegiatan) }}</textarea>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Kendala Kegiatan</label>
-                    <textarea name="kendala_kegiatan" rows="5" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-semibold outline-none transition-all resize-none">{{ old('kendala_kegiatan',$kegiatan->kendala_kegiatan) }}</textarea>
+                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Kendala Kegiatan <span class="text-red-500">*</span></label>
+                    <textarea name="kendala_kegiatan" rows="5" required class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-semibold outline-none transition-all resize-none">{{ old('kendala_kegiatan',$kegiatan->kendala_kegiatan) }}</textarea>
                 </div>
             </div>
         </div>
@@ -235,7 +235,7 @@
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-xl bg-brand-primary/10 flex items-center justify-center"><span class="text-brand-primary font-black text-sm">5</span></div>
                     <div>
-                        <h2 class="text-sm font-black text-slate-700 dark:text-white uppercase tracking-widest">Dokumentasi Kegiatan</h2>
+                        <h2 class="text-sm font-black text-slate-700 dark:text-white uppercase tracking-widest">Dokumentasi Kegiatan <span class="text-red-500">*</span></h2>
                         <p class="text-[10px] text-slate-400 font-medium">Centang file lama untuk dihapus · Upload file baru untuk ditambahkan</p>
                     </div>
                 </div>
@@ -338,6 +338,7 @@
                      @drop.prevent="handleDrop($event)"
                      @click="$refs.newFileInput.click()">
                     <input type="file" x-ref="newFileInput" id="newDokumenInput" name="dokumen[]" multiple
+                           :required="existingFiles.filter(f => !f.deleted).length === 0 && newFiles.length === 0"
                            accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx"
                            class="hidden"
                            @change="handleFiles($event.target.files)">

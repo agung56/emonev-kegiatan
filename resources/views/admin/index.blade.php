@@ -4,8 +4,10 @@
 @section('content')
 @php
 $namaBulan = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-$namaBulanFull = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-$bulanSekarang = (int) date('n');
+$namaTriwulan = ['TW I', 'TW II', 'TW III', 'TW IV'];
+$tahunSekarang = (int) date('Y');
+$bulanSekarang = (int) $tahun === $tahunSekarang ? (int) date('n') : 0;
+$triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) : 0;
 @endphp
 
 <div class="p-6 space-y-6">
@@ -65,8 +67,36 @@ $bulanSekarang = (int) date('n');
         </div>
     </div>
 
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filter Dashboard</p>
+            <p class="text-sm text-slate-500 font-medium mt-1">Tampilkan ringkasan dashboard berdasarkan tahun anggaran.</p>
+        </div>
+        <form action="{{ route('dashboard') }}" method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div class="relative min-w-[180px]">
+                <select name="tahun" onchange="this.form.submit()"
+                        class="appearance-none w-full px-5 py-3.5 pr-10 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all">
+                    @forelse($tahunList as $year)
+                    <option value="{{ $year }}" {{ (int) $tahun === (int) $year ? 'selected' : '' }}>{{ $year }}</option>
+                    @empty
+                    <option value="{{ $tahun }}" selected>{{ $tahun }}</option>
+                    @endforelse
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+            @if(request()->has('tahun'))
+            <a href="{{ route('dashboard') }}"
+               class="px-4 py-3 text-center text-xs font-black text-slate-500 uppercase tracking-widest border-2 border-slate-200 dark:border-white/10 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                Reset
+            </a>
+            @endif
+        </form>
+    </div>
+
     {{-- ══ STAT CARDS ══ --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 gap-4">
 
         {{-- Total Kegiatan --}}
         <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-5 hover:border-brand-primary/40 transition-all group">
@@ -79,50 +109,6 @@ $bulanSekarang = (int) date('n');
             <div class="mt-3">
                 <p class="text-3xl font-black text-slate-800 dark:text-white group-hover:text-brand-primary transition-colors">{{ $totalKegiatan }}</p>
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Kegiatan</p>
-            </div>
-        </div>
-
-        {{-- Sedang Berjalan --}}
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-5 hover:border-green-400/40 transition-all group">
-            <div class="flex items-start justify-between">
-                <div class="w-10 h-10 rounded-2xl bg-green-100 dark:bg-green-500/10 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <span class="flex items-center gap-1 text-[9px] font-black text-green-500 uppercase tracking-widest mt-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>Live
-                </span>
-            </div>
-            <div class="mt-3">
-                <p class="text-3xl font-black text-slate-800 dark:text-white group-hover:text-green-500 transition-colors">{{ $kegiatanBerjalan }}</p>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Sedang Berjalan</p>
-            </div>
-        </div>
-
-        {{-- Selesai --}}
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-5 hover:border-blue-400/40 transition-all group">
-            <div class="flex items-start justify-between">
-                <div class="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Tuntas</span>
-            </div>
-            <div class="mt-3">
-                <p class="text-3xl font-black text-slate-800 dark:text-white group-hover:text-blue-500 transition-colors">{{ $kegiatanSelesai }}</p>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Sudah Selesai</p>
-            </div>
-        </div>
-
-        {{-- Mendatang --}}
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 p-5 hover:border-amber-400/40 transition-all group">
-            <div class="flex items-start justify-between">
-                <div class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Soon</span>
-            </div>
-            <div class="mt-3">
-                <p class="text-3xl font-black text-slate-800 dark:text-white group-hover:text-amber-500 transition-colors">{{ $kegiatanMendatang }}</p>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Akan Datang</p>
             </div>
         </div>
 
@@ -254,48 +240,121 @@ $bulanSekarang = (int) date('n');
     </div>
 
     {{-- ══ CHART PENYERAPAN BULANAN ══ --}}
-    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5">
-            <h2 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Tren Realisasi Bulanan</h2>
-            <p class="text-[10px] text-slate-400 font-medium mt-0.5">Realisasi anggaran per bulan · TA {{ $tahun }}</p>
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden"
+         x-data="{ trendMode: 'monthly' }">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <h2 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Tren Realisasi</h2>
+                <p class="text-[10px] text-slate-400 font-medium mt-0.5"
+                   x-text="trendMode === 'monthly' ? 'Realisasi anggaran per bulan untuk TA {{ $tahun }}' : 'Realisasi anggaran per triwulan untuk TA {{ $tahun }}'"></p>
+            </div>
+            <div class="inline-flex items-center gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800">
+                <button type="button" @click="trendMode = 'monthly'"
+                        :class="trendMode === 'monthly' ? 'bg-white dark:bg-slate-700 text-brand-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'"
+                        class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                    Bulanan
+                </button>
+                <button type="button" @click="trendMode = 'quarterly'"
+                        :class="trendMode === 'quarterly' ? 'bg-white dark:bg-slate-700 text-brand-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'"
+                        class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                    Triwulanan
+                </button>
+            </div>
         </div>
         <div class="p-6">
-            <div class="flex items-end gap-2 h-36" id="barChart">
-                @php $maxVal = max(array_merge($penyerapanPerBulan, [1])); @endphp
-                @foreach($penyerapanPerBulan as $i => $val)
-                @php
-                    $m = $i + 1;
-                    $heightPct = $maxVal > 0 ? round(($val / $maxVal) * 100) : 0;
-                    $isNow = $m === $bulanSekarang;
-                @endphp
-                <div class="flex-1 flex flex-col items-center gap-1.5 group/bar">
-                    <div class="w-full relative flex items-end justify-center" style="height:120px">
-                        @if($val > 0)
-                        <div class="relative w-full max-w-[40px] rounded-t-lg transition-all duration-700 {{ $isNow ? 'bg-brand-primary' : 'bg-brand-primary/30 group-hover/bar:bg-brand-primary/60' }}"
-                             style="height: {{ $heightPct }}%"
-                             title="{{ $namaBulan[$m] }}: Rp {{ number_format($val, 0, ',', '.') }}">
+            <div x-show="trendMode === 'monthly'" x-cloak>
+                <div class="flex items-end gap-2 h-36 trend-bars">
+                    @php $maxValBulanan = max(array_merge($penyerapanPerBulan, [1])); @endphp
+                    @foreach($penyerapanPerBulan as $i => $val)
+                    @php
+                        $bulan = $i + 1;
+                        $heightPct = $maxValBulanan > 0 ? round(($val / $maxValBulanan) * 100) : 0;
+                        $isCurrentMonth = $bulanSekarang > 0 && $bulan === $bulanSekarang;
+                    @endphp
+                    <div class="flex-1 flex flex-col items-center gap-1.5 group/bar">
+                        <div class="w-full relative flex items-end justify-center" style="height:120px">
+                            @if($val > 0)
+                            <div data-bar-height="{{ $heightPct }}"
+                                 class="relative w-full max-w-[40px] rounded-t-lg transition-all duration-700 {{ $isCurrentMonth ? 'bg-brand-primary' : 'bg-brand-primary/30 group-hover/bar:bg-brand-primary/60' }}"
+                                 style="height: {{ $heightPct }}%"
+                                 title="{{ $namaBulan[$bulan] }}: Rp {{ number_format($val, 0, ',', '.') }}">
+                            </div>
+                            @else
+                            <div class="w-full max-w-[40px] rounded-t-lg bg-slate-100 dark:bg-slate-800" style="height: 4px"></div>
+                            @endif
                         </div>
-                        @else
-                        <div class="w-full max-w-[40px] rounded-t-lg bg-slate-100 dark:bg-slate-800" style="height: 4px"></div>
-                        @endif
+                        <span class="text-[9px] font-bold {{ $isCurrentMonth ? 'text-brand-primary' : 'text-slate-400' }} uppercase">{{ $namaBulan[$bulan] }}</span>
                     </div>
-                    <span class="text-[9px] font-bold {{ $isNow ? 'text-brand-primary' : 'text-slate-400' }} uppercase">{{ $namaBulan[$m] }}</span>
+                    @endforeach
                 </div>
-                @endforeach
+                <div class="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                    @if($bulanSekarang > 0)
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded bg-brand-primary"></div>
+                        <span class="text-[10px] font-bold text-slate-500">Bulan ini ({{ $namaBulan[$bulanSekarang] }})</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded bg-brand-primary/30"></div>
+                        <span class="text-[10px] font-bold text-slate-500">Bulan lainnya</span>
+                    </div>
+                    @else
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded bg-brand-primary/30"></div>
+                        <span class="text-[10px] font-bold text-slate-500">Semua bulan pada TA {{ $tahun }}</span>
+                    </div>
+                    @endif
+                    @php $totalBulanan = array_sum($penyerapanPerBulan); @endphp
+                    <div class="ml-auto text-[10px] font-black text-slate-500">
+                        Total TA: <span class="text-brand-primary">Rp {{ number_format($totalBulanan, 0, ',', '.') }}</span>
+                    </div>
+                </div>
             </div>
-            {{-- Legend --}}
-            <div class="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded bg-brand-primary"></div>
-                    <span class="text-[10px] font-bold text-slate-500">Bulan ini ({{ $namaBulan[$bulanSekarang] }})</span>
+
+            <div x-show="trendMode === 'quarterly'" x-cloak>
+                <div class="flex items-end gap-2 h-36 trend-bars">
+                    @php $maxVal = max(array_merge($penyerapanPerTriwulan, [1])); @endphp
+                    @foreach($penyerapanPerTriwulan as $i => $val)
+                    @php
+                        $triwulan = $i + 1;
+                        $heightPct = $maxVal > 0 ? round(($val / $maxVal) * 100) : 0;
+                        $isNow = $triwulanSekarang > 0 && $triwulan === $triwulanSekarang;
+                    @endphp
+                    <div class="flex-1 flex flex-col items-center gap-1.5 group/bar">
+                        <div class="w-full relative flex items-end justify-center" style="height:120px">
+                            @if($val > 0)
+                            <div data-bar-height="{{ $heightPct }}"
+                                 class="relative w-full max-w-[72px] rounded-t-lg transition-all duration-700 {{ $isNow ? 'bg-brand-primary' : 'bg-brand-primary/30 group-hover/bar:bg-brand-primary/60' }}"
+                                 style="height: {{ $heightPct }}%"
+                                 title="{{ $namaTriwulan[$i] }}: Rp {{ number_format($val, 0, ',', '.') }}">
+                            </div>
+                            @else
+                            <div class="w-full max-w-[72px] rounded-t-lg bg-slate-100 dark:bg-slate-800" style="height: 4px"></div>
+                            @endif
+                        </div>
+                        <span class="text-[9px] font-bold {{ $isNow ? 'text-brand-primary' : 'text-slate-400' }} uppercase">{{ $namaTriwulan[$i] }}</span>
+                    </div>
+                    @endforeach
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded bg-brand-primary/30"></div>
-                    <span class="text-[10px] font-bold text-slate-500">Bulan lainnya</span>
-                </div>
-                @php $totalChart = array_sum($penyerapanPerBulan); @endphp
-                <div class="ml-auto text-[10px] font-black text-slate-500">
-                    YTD: <span class="text-brand-primary">Rp {{ number_format($totalChart, 0, ',', '.') }}</span>
+                <div class="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                    @if($triwulanSekarang > 0)
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded bg-brand-primary"></div>
+                        <span class="text-[10px] font-bold text-slate-500">Triwulan berjalan ({{ $namaTriwulan[$triwulanSekarang - 1] }})</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded bg-brand-primary/30"></div>
+                        <span class="text-[10px] font-bold text-slate-500">Triwulan lainnya</span>
+                    </div>
+                    @else
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded bg-brand-primary/30"></div>
+                        <span class="text-[10px] font-bold text-slate-500">Semua triwulan pada TA {{ $tahun }}</span>
+                    </div>
+                    @endif
+                    @php $totalChart = array_sum($penyerapanPerTriwulan); @endphp
+                    <div class="ml-auto text-[10px] font-black text-slate-500">
+                        Total TA: <span class="text-brand-primary">Rp {{ number_format($totalChart, 0, ',', '.') }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -365,8 +424,8 @@ $bulanSekarang = (int) date('n');
         @endif
     </div>
 
-    {{-- ══ BARIS BAWAH: Kegiatan Terbaru + Upcoming ══ --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    {{-- ══ BARIS BAWAH: Kegiatan Terbaru ══ --}}
+    <div class="grid grid-cols-1 gap-6">
 
         {{-- Kegiatan Terbaru --}}
         <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
@@ -417,55 +476,6 @@ $bulanSekarang = (int) date('n');
             </div>
         </div>
 
-        {{-- Kegiatan Upcoming --}}
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                <div>
-                    <h2 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Akan Datang</h2>
-                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Kegiatan yang belum dimulai</p>
-                </div>
-                <div class="flex items-center gap-1 text-amber-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-            </div>
-            <div class="divide-y divide-slate-50 dark:divide-white/5">
-                @forelse($kegiatanUpcoming as $kg)
-                @php
-                    $daysLeft = $today->diffInDays($kg->tanggal_mulai, false);
-                    $urgent   = $daysLeft <= 7;
-                @endphp
-                <a href="{{ route('kegiatans.show', $kg->id) }}"
-                   class="flex items-start gap-4 px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group/up">
-                    <div class="w-12 shrink-0 text-center">
-                        <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center {{ $urgent ? 'bg-red-100 dark:bg-red-500/10' : 'bg-amber-50 dark:bg-amber-500/10' }}">
-                            <span class="text-base font-black leading-none {{ $urgent ? 'text-red-500' : 'text-amber-500' }}">{{ $kg->tanggal_mulai->format('d') }}</span>
-                            <span class="text-[8px] font-black uppercase {{ $urgent ? 'text-red-400' : 'text-amber-400' }}">{{ $namaBulan[$kg->tanggal_mulai->month] }}</span>
-                        </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover/up:text-brand-primary transition-colors">
-                            {{ $kg->nama_kegiatan }}
-                        </p>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5 truncate">{{ $kg->sasaran->nama_sasaran ?? '-' }}</p>
-                        @if($kg->lokus)
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">📍 {{ $kg->lokus }}</p>
-                        @endif
-                    </div>
-                    <div class="text-right shrink-0">
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded-full {{ $urgent ? 'bg-red-100 text-red-500 dark:bg-red-500/10' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' }}">
-                            {{ $daysLeft }}h lagi
-                        </span>
-                    </div>
-                </a>
-                @empty
-                <div class="flex flex-col items-center gap-2 py-12">
-                    <svg class="w-8 h-8 text-slate-200 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <p class="text-xs font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">Tidak ada jadwal mendatang</p>
-                </div>
-                @endforelse
-            </div>
-        </div>
-
     </div>
 
 </div>
@@ -476,9 +486,9 @@ $bulanSekarang = (int) date('n');
 <script>
     // animasi bar chart on load
     document.addEventListener('DOMContentLoaded', function() {
-        const bars = document.querySelectorAll('#barChart [style*="height"]');
+        const bars = document.querySelectorAll('.trend-bars [data-bar-height]');
         bars.forEach((el, i) => {
-            const h = el.style.height;
+            const h = `${el.dataset.barHeight}%`;
             el.style.height = '0%';
             setTimeout(() => { el.style.height = h; }, 100 + i * 60);
         });

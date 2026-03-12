@@ -38,7 +38,6 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
               periode: '{{ $periode }}',
               get showBulan()    { return this.periode === 'bulan' },
               get showTriwulan() { return this.periode === 'triwulan' },
-              get showSemester() { return this.periode === 'semester' },
           }">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
 
@@ -57,7 +56,6 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                             class="appearance-none w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-9">
                         <option value="bulan" {{ $periode==='bulan'?'selected':'' }}>Bulanan</option>
                         <option value="triwulan" {{ $periode==='triwulan'?'selected':'' }}>Triwulanan</option>
-                        <option value="semester" {{ $periode==='semester'?'selected':'' }}>Semesteran</option>
                         <option value="tahunan" {{ $periode==='tahunan'?'selected':'' }}>Tahunan</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
@@ -93,11 +91,12 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                 </div>
             </div>
 
+            @if(false)
             {{-- Semester --}}
-            <div class="space-y-1.5" x-show="showSemester" x-transition>
+            <div class="hidden">
                 <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Semester</label>
                 <div class="relative">
-                    <select name="semester"
+                    <select disabled
                             class="appearance-none w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-9">
                         <option value="1" {{ $semester==1?'selected':'' }}>Semester I (Jan–Jun)</option>
                         <option value="2" {{ $semester==2?'selected':'' }}>Semester II (Jul–Des)</option>
@@ -106,6 +105,7 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                 </div>
             </div>
 
+            @endif
             {{-- Tombol --}}
             <div class="space-y-1.5">
                 <label class="text-[11px] font-black text-transparent uppercase tracking-widest ml-1 select-none">_</label>

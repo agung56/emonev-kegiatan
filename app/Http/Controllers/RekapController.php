@@ -14,16 +14,18 @@ class RekapController extends Controller
     public function index(Request $request)
     {
         $tahun    = $request->get('tahun', date('Y'));
-        $periode  = $request->get('periode', 'bulan');   // bulan | triwulan | semester | tahunan
+        $periode  = $request->get('periode', 'bulan');   // bulan | triwulan | tahunan
+        if (! in_array($periode, ['bulan', 'triwulan', 'tahunan'], true)) {
+            $periode = 'bulan';
+        }
         $bulan    = $request->get('bulan', date('n'));
         $triwulan = $request->get('triwulan', 1);        // 1-4
-        $semester = $request->get('semester', 1);        // 1-2
 
         // Tentukan rentang bulan berdasarkan periode
-        [$bulanMulai, $bulanAkhir] = $this->getRentangBulan($periode, $bulan, $triwulan, $semester);
+        [$bulanMulai, $bulanAkhir] = $this->getRentangBulan($periode, $bulan, $triwulan);
 
         // Label periode untuk tampilan
-        $labelPeriode = $this->getLabelPeriode($periode, $bulan, $triwulan, $semester, $tahun);
+        $labelPeriode = $this->getLabelPeriode($periode, $bulan, $triwulan, $tahun);
 
         // Ambil semua sasaran aktif beserta indikatornya
         $sasarans = Sasaran::with([
@@ -49,30 +51,28 @@ class RekapController extends Controller
 
         return view('admin.rekap.index', compact(
             'sasarans', 'rekapAnggaran', 'tahunList',
-            'tahun', 'periode', 'bulan', 'triwulan', 'semester',
+            'tahun', 'periode', 'bulan', 'triwulan',
             'bulanMulai', 'bulanAkhir', 'labelPeriode'
         ));
     }
 
-    private function getRentangBulan(string $periode, $bulan, $triwulan, $semester): array
+    private function getRentangBulan(string $periode, $bulan, $triwulan): array
     {
         return match ($periode) {
             'bulan'     => [(int)$bulan, (int)$bulan],
             'triwulan'  => [((int)$triwulan - 1) * 3 + 1, (int)$triwulan * 3],
-            'semester'  => [(int)$semester === 1 ? 1 : 7, (int)$semester === 1 ? 6 : 12],
             'tahunan'   => [1, 12],
             default     => [(int)$bulan, (int)$bulan],
         };
     }
 
-    private function getLabelPeriode(string $periode, $bulan, $triwulan, $semester, $tahun): string
+    private function getLabelPeriode(string $periode, $bulan, $triwulan, $tahun): string
     {
         $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         return match ($periode) {
             'bulan'    => $namaBulan[(int)$bulan] . ' ' . $tahun,
             'triwulan' => 'Triwulan ' . ['I','II','III','IV'][$triwulan - 1] . ' ' . $tahun,
-            'semester' => 'Semester ' . ((int)$semester === 1 ? 'I' : 'II') . ' ' . $tahun,
             'tahunan'  => 'Tahun ' . $tahun,
             default    => $tahun,
         };
