@@ -264,9 +264,34 @@ class KegiatanController extends Controller
 
     public function getPaguDetails(int $paguId)
     {
+        $excludeKegiatanId = request()->query('exclude_kegiatan');
+
+        // Ambil pagu beserta tahun_anggaran-nya untuk filter
+        $pagu = \App\Models\Pagu::findOrFail($paguId);
+        $tahunAnggaran = $pagu->tahun_anggaran;
+
         $details = \App\Models\PaguDetail::where('pagu_id', $paguId)
             ->select('id', 'nama_akun', 'nominal')
-            ->get();
+            ->get()
+            ->map(function ($d) use ($excludeKegiatanId, $tahunAnggaran) {
+                // Hitung total terpakai dari SEMUA kegiatan yang:
+                // 1. Pakai pagu_detail ini
+                // 2. Tahun anggaran cocok dengan pagu
+                // 3. Exclude kegiatan yang sedang diedit (agar tidak dobel)
+                $sudahTerpakai = \App\Models\KegiatanAnggaran::where('pagu_detail_id', $d->id)
+                    ->whereHas('kegiatan', function ($q) use ($tahunAnggaran, $excludeKegiatanId) {
+                        $q->where('tahun_anggaran', $tahunAnggaran);
+                        if ($excludeKegiatanId) {
+                            $q->where('id', '!=', $excludeKegiatanId);
+                        }
+                    })
+                    ->sum('nominal_digunakan');
+
+                $d->sudah_terpakai = (float) $sudahTerpakai;
+                $d->sisa_tersedia  = (float) $d->nominal - $sudahTerpakai;
+                return $d;
+            });
+
         return response()->json($details);
     }
 }

@@ -11,7 +11,22 @@ class PaguController extends Controller
      * Display a listing of the resource.
      */
     public function index() {
-        $pagus = Pagu::with('details')->latest()->get();
+        $pagus = Pagu::with(['details'])->latest()->get();
+
+        // Hitung total terpakai per pagu_detail dari kegiatan_anggarans
+        // Filter per tahun anggaran agar tidak cross-tahun
+        $pagus->each(function ($pagu) {
+            $pagu->details->each(function ($detail) use ($pagu) {
+                $terpakai = \App\Models\KegiatanAnggaran::where('pagu_detail_id', $detail->id)
+                    ->whereHas('kegiatan', fn($q) => $q->where('tahun_anggaran', $pagu->tahun_anggaran))
+                    ->sum('nominal_digunakan');
+                $detail->terpakai  = (float) $terpakai;
+                $detail->sisa      = (float) $detail->nominal - $terpakai;
+            });
+            $pagu->total_terpakai = $pagu->details->sum('terpakai');
+            $pagu->sisa_pagu      = $pagu->details->sum('sisa');
+        });
+
         return view('admin.pagu.index', compact('pagus'));
     }
 

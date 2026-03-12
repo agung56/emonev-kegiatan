@@ -95,15 +95,16 @@
                 {{-- Info total pagu & sisa --}}
                 <div x-show="paguTotal > 0" x-transition class="grid grid-cols-3 gap-3">
                     <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Pagu</p>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sisa Pagu Tersedia</p>
                         <p class="text-sm font-black text-slate-700 dark:text-white mt-1" x-text="formatRupiahFull(paguTotal)"></p>
+                        <p class="text-[9px] text-slate-400 mt-0.5">(sudah dikurangi kegiatan lain)</p>
                     </div>
                     <div class="p-3.5 bg-brand-primary/5 dark:bg-brand-primary/10 rounded-2xl">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Digunakan</p>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Input Form Ini</p>
                         <p class="text-sm font-black text-brand-primary mt-1" x-text="formatRupiahFull(totalAnggaran)"></p>
                     </div>
                     <div class="p-3.5 rounded-2xl" :class="sisaAnggaran < 0 ? 'bg-red-50 dark:bg-red-500/10' : 'bg-green-50 dark:bg-green-500/10'">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sisa Anggaran</p>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sisa Setelah Input</p>
                         <p class="text-sm font-black mt-1" :class="sisaClass" x-text="formatRupiahFull(sisaAnggaran)"></p>
                     </div>
                 </div>
@@ -127,8 +128,10 @@
                                 {{-- Sisa per akun --}}
                                 <template x-if="row.pagu_detail_id">
                                     <div class="flex items-center justify-between mt-1.5 px-1">
-                                        <span class="text-[10px] text-slate-400 font-medium">
-                                            Pagu akun: <span class="font-black text-slate-600 dark:text-slate-300" x-text="formatRupiahFull(getNominalAkun(row.pagu_detail_id))"></span>
+                                        <span class="text-[10px] text-slate-400 font-medium flex items-center gap-1.5 flex-wrap">
+                                            <span>Pagu: <span class="font-black text-slate-600 dark:text-slate-300" x-text="formatRupiahFull(getNominalAkun(row.pagu_detail_id))"></span></span>
+                                            <span class="text-slate-300">·</span>
+                                            <span>Terpakai lain: <span class="font-black text-amber-500" x-text="formatRupiahFull(paguNamaAkun[row.pagu_detail_id]?.sudahTerpakai || 0)"></span></span>
                                         </span>
                                         <span class="text-[10px] font-black"
                                               :class="getSisaAkun(row.pagu_detail_id, index) < 0 ? 'text-red-500' : 'text-green-500'">
@@ -431,12 +434,40 @@ function kegiatanForm() {
         selectedIndikatorIds: @json($kegiatan->indikators->pluck('id')),
         anggaranRows: @json($kegiatan->anggarans->map(fn($a) => ['id' => $a->id, 'pagu_detail_id' => $a->pagu_detail_id, 'nominal' => $a->nominal_digunakan])),
 
-        paguTotal: @json($kegiatan->pagu->details->sum('nominal') ?? 0),
-        paguNamaAkun: @json(
-            $kegiatan->pagu->details->mapWithKeys(fn($d) => [
-                $d->id => ['nama' => $d->nama_akun, 'nominal' => (float)$d->nominal]
-            ]) ?? collect()
-        ),
+        // Init paguTotal & paguNamaAkun — filter tahun anggaran + exclude kegiatan ini
+        paguTotal: @php
+            $tahunPagu = $kegiatan->pagu->tahun_anggaran;
+            $sisaTotal = 0;
+            foreach (($kegiatan->pagu->details ?? []) as $d) {
+                $terpakai = \App\Models\KegiatanAnggaran::where('pagu_detail_id', $d->id)
+                    ->whereHas('kegiatan', fn($q) => $q
+                        ->where('tahun_anggaran', $tahunPagu)
+                        ->where('id', '!=', $kegiatan->id)
+                    )
+                    ->sum('nominal_digunakan');
+                $sisaTotal += ($d->nominal - $terpakai);
+            }
+            echo $sisaTotal;
+        @endphp,
+        paguNamaAkun: @php
+            $tahunPagu = $kegiatan->pagu->tahun_anggaran;
+            $map = [];
+            foreach (($kegiatan->pagu->details ?? []) as $d) {
+                $terpakai = \App\Models\KegiatanAnggaran::where('pagu_detail_id', $d->id)
+                    ->whereHas('kegiatan', fn($q) => $q
+                        ->where('tahun_anggaran', $tahunPagu)
+                        ->where('id', '!=', $kegiatan->id)
+                    )
+                    ->sum('nominal_digunakan');
+                $map[$d->id] = [
+                    'nama'          => $d->nama_akun,
+                    'nominal'       => (float)$d->nominal,
+                    'sudahTerpakai' => (float)$terpakai,
+                    'sisaTersedia'  => (float)($d->nominal - $terpakai),
+                ];
+            }
+            echo json_encode($map);
+        @endphp,
 
         get totalAnggaran() {
             return this.anggaranRows.reduce((s, r) => s + (parseInt(r.nominal) || 0), 0);
@@ -450,14 +481,16 @@ function kegiatanForm() {
         getNominalAkun(paguDetailId) {
             return this.paguNamaAkun[paguDetailId]?.nominal || 0;
         },
+        getSisaTersediaAkun(paguDetailId) {
+            return this.paguNamaAkun[paguDetailId]?.sisaTersedia ?? null;
+        },
         getSisaAkun(paguDetailId, rowIndex) {
-            const paguAkun = this.getNominalAkun(paguDetailId);
-            if (!paguAkun) return null;
-            // Total terpakai di akun ini (semua row yang pakai akun yg sama)
-            const terpakai = this.anggaranRows.reduce((s, r, i) => {
+            const sisaTersedia = this.getSisaTersediaAkun(paguDetailId);
+            if (sisaTersedia === null) return null;
+            const inputForm = this.anggaranRows.reduce((s, r) => {
                 return s + (r.pagu_detail_id == paguDetailId ? (parseInt(r.nominal) || 0) : 0);
             }, 0);
-            return paguAkun - terpakai;
+            return sisaTersedia - inputForm;
         },
 
         formatRupiah(val) {
@@ -478,13 +511,19 @@ function kegiatanForm() {
             this.paguDetails = []; this.anggaranRows = [];
             this.paguTotal = 0; this.paguNamaAkun = {};
             if (!id) return;
-            this.paguDetails = await fetch(`/api/pagu/${id}/details`).then(r => r.json());
-            // Bangun mapping id → {nama, nominal} dan total pagu dari sum detail
+            // exclude_kegiatan: keluarkan kegiatan ini agar tidak dihitung dobel
+            const url = `/api/pagu/${id}/details?exclude_kegiatan={{ $kegiatan->id }}`;
+            this.paguDetails = await fetch(url).then(r => r.json());
             this.paguNamaAkun = {};
             this.paguDetails.forEach(d => {
-                this.paguNamaAkun[d.id] = { nama: d.nama_akun, nominal: parseFloat(d.nominal) };
+                this.paguNamaAkun[d.id] = {
+                    nama:           d.nama_akun,
+                    nominal:        parseFloat(d.nominal),
+                    sudahTerpakai:  parseFloat(d.sudah_terpakai),
+                    sisaTersedia:   parseFloat(d.sisa_tersedia),
+                };
             });
-            this.paguTotal = this.paguDetails.reduce((s, d) => s + parseFloat(d.nominal), 0);
+            this.paguTotal = this.paguDetails.reduce((s, d) => s + parseFloat(d.sisa_tersedia), 0);
         },
 
         async loadIndikators(id) {

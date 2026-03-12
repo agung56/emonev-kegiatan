@@ -107,6 +107,8 @@
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kegiatan & Tahun</th>
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Rincian</th>
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Total Pagu</th>
+                        <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Terpakai</th>
+                        <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Sisa Pagu</th>
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -135,6 +137,22 @@
                             <span class="text-sm font-black text-brand-primary">Rp {{ number_format($pagu->total_nominal, 0, ',', '.') }}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
+                            <span class="text-sm font-black text-amber-500">Rp {{ number_format($pagu->total_terpakai ?? 0, 0, ',', '.') }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            @php $sisa = $pagu->sisa_pagu ?? 0; @endphp
+                            <div class="flex flex-col items-end">
+                                <span class="text-sm font-black {{ $sisa < 0 ? 'text-red-500' : 'text-green-500' }}">
+                                    Rp {{ number_format($sisa, 0, ',', '.') }}
+                                </span>
+                                @php $pct = $pagu->total_nominal > 0 ? ($sisa / $pagu->total_nominal * 100) : 0; @endphp
+                                <div class="w-20 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full mt-1.5 overflow-hidden">
+                                    <div class="h-full rounded-full transition-all {{ $sisa < 0 ? 'bg-red-400' : ($pct < 30 ? 'bg-amber-400' : 'bg-green-400') }}"
+                                         style="width: {{ max(0, min(100, $pct)) }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-1">
                                 <button @click="toggleModal(true, {{ $pagu->toJson() }})" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -155,22 +173,52 @@
                         x-transition:enter-start="opacity-0 -translate-y-2"
                         x-transition:enter-end="opacity-100 translate-y-0"
                         class="bg-slate-50/30 dark:bg-white/[0.02]">
-                        <td colspan="5" class="px-12 py-4">
+                        <td colspan="7" class="px-12 py-4">
                             <div class="overflow-hidden rounded-2xl border border-slate-100 dark:border-white/5 bg-white dark:bg-slate-800/50 shadow-inner">
                                 <table class="w-full text-left">
                                     <thead class="bg-slate-50 dark:bg-white/5">
                                         <tr>
                                             <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Akun Belanja</th>
-                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Nominal Alokasi</th>
+                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Alokasi</th>
+                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Terpakai</th>
+                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Sisa</th>
+                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Penyerapan</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-50 dark:divide-white/5">
                                         @foreach($pagu->details as $det)
-                                        <tr>
+                                        @php
+                                            $detTerpakai = $det->terpakai ?? 0;
+                                            $detSisa     = $det->sisa ?? $det->nominal;
+                                            $detPct      = $det->nominal > 0 ? ($detTerpakai / $det->nominal * 100) : 0;
+                                        @endphp
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                                             <td class="px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300">{{ $det->nama_akun }}</td>
-                                            <td class="px-4 py-3 text-xs font-black text-slate-800 dark:text-white text-right">Rp {{ number_format($det->nominal, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-3 text-xs font-black text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">Rp {{ number_format($det->nominal, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-3 text-xs font-black text-amber-500 text-right whitespace-nowrap">Rp {{ number_format($detTerpakai, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-3 text-xs font-black text-right whitespace-nowrap {{ $detSisa < 0 ? 'text-red-500' : 'text-green-500' }}">Rp {{ number_format($detSisa, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div class="h-full rounded-full {{ $detPct >= 90 ? 'bg-red-400' : ($detPct >= 60 ? 'bg-amber-400' : 'bg-green-400') }}"
+                                                             style="width: {{ min(100, $detPct) }}%"></div>
+                                                    </div>
+                                                    <span class="text-[10px] font-black {{ $detPct >= 90 ? 'text-red-500' : ($detPct >= 60 ? 'text-amber-500' : 'text-green-500') }} w-10 text-right">{{ number_format($detPct, 1) }}%</span>
+                                                </div>
+                                            </td>
                                         </tr>
                                         @endforeach
+                                        {{-- Footer total per pagu --}}
+                                        <tr class="bg-slate-50 dark:bg-white/5 border-t-2 border-slate-200 dark:border-white/10">
+                                            <td class="px-4 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">TOTAL</td>
+                                            <td class="px-4 py-2.5 text-[10px] font-black text-slate-700 dark:text-white text-right">Rp {{ number_format($pagu->total_nominal, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-2.5 text-[10px] font-black text-amber-500 text-right">Rp {{ number_format($pagu->total_terpakai ?? 0, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-2.5 text-[10px] font-black text-right {{ ($pagu->sisa_pagu ?? 0) < 0 ? 'text-red-500' : 'text-green-500' }}">Rp {{ number_format($pagu->sisa_pagu ?? 0, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-2.5 text-[10px] font-black text-slate-400 text-center">
+                                                @php $totalPct = $pagu->total_nominal > 0 ? (($pagu->total_terpakai ?? 0) / $pagu->total_nominal * 100) : 0; @endphp
+                                                {{ number_format($totalPct, 1) }}% terserap
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
