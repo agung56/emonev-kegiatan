@@ -211,7 +211,6 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pagu</p>
                             <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($paguTahunIni/1000000, 1, ',', '.') }}Jt</p>
                         </div>
-                        <p class="text-[10px] text-slate-400 font-medium">Sekretariat + lembaga</p>
                     </div>
                 </div>
             </div>
