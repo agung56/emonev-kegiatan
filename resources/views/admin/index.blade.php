@@ -177,23 +177,15 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
             </div>
         </div>
 
-        {{-- Penyerapan Lembaga vs Sekretariat (1/3) --}}
+        {{-- Penyerapan pagu global --}}
         <div class="space-y-4">
-
-            {{-- Lembaga --}}
-            @foreach(['lembaga' => ['purple', 'Lembaga'], 'sekretariat' => ['orange', 'Sekretariat']] as $kep => [$color, $label])
-            @php
-                $paguK      = $paguKep[$kep] ?? 0;
-                $realisasiK = $realisasiKep[$kep] ?? 0;
-                $pctK       = $paguK > 0 ? round(($realisasiK / $paguK) * 100, 1) : 0;
-            @endphp
             <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm p-5">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
-                        <div class="w-2.5 h-2.5 rounded-full bg-{{ $color }}-400"></div>
-                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ $label }}</span>
+                        <div class="w-2.5 h-2.5 rounded-full bg-brand-primary"></div>
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pagu Anggaran Tahun {{ $tahun }}</span>
                     </div>
-                    <span class="text-xs font-black text-{{ $color }}-500">{{ $pctK }}%</span>
+                    <span class="text-xs font-black text-brand-primary">{{ $pctPenyerapan }}%</span>
                 </div>
 
                 {{-- Donut mini via SVG --}}
@@ -203,26 +195,26 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                             <circle cx="18" cy="18" r="13" fill="none" stroke="currentColor" stroke-width="4" class="text-slate-100 dark:text-slate-800"/>
                             <circle cx="18" cy="18" r="13" fill="none"
                                 stroke="currentColor" stroke-width="4" stroke-linecap="round"
-                                stroke-dasharray="{{ $pctK }}, 100"
-                                class="text-{{ $color }}-400"/>
+                                stroke-dasharray="{{ $pctPenyerapan }}, 100"
+                                class="text-brand-primary"/>
                         </svg>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-[10px] font-black text-slate-700 dark:text-white">{{ $pctK }}%</span>
+                            <span class="text-[10px] font-black text-slate-700 dark:text-white">{{ $pctPenyerapan }}%</span>
                         </div>
                     </div>
                     <div class="space-y-1.5 flex-1 min-w-0">
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Realisasi</p>
-                            <p class="text-sm font-black text-{{ $color }}-500 truncate">Rp {{ number_format($realisasiK/1000000, 1, ',', '.') }}Jt</p>
+                            <p class="text-sm font-black text-brand-primary truncate">Rp {{ number_format($realisasiTahunIni/1000000, 1, ',', '.') }}Jt</p>
                         </div>
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pagu</p>
-                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($paguK/1000000, 1, ',', '.') }}Jt</p>
+                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($paguTahunIni/1000000, 1, ',', '.') }}Jt</p>
                         </div>
+                        <p class="text-[10px] text-slate-400 font-medium">Sekretariat + lembaga</p>
                     </div>
                 </div>
             </div>
-            @endforeach
 
             {{-- Sasaran aktif --}}
             <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm p-5 flex items-center gap-4">

@@ -115,17 +115,6 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // ── KEGIATAN MENDATANG ────────────────────────────────────────────
-        // ── PENYERAPAN PER KEPEMILIKAN ────────────────────────────────────
-        foreach (['lembaga', 'sekretariat'] as $kep) {
-            $paguKep[$kep] = Pagu::whereHas('kegiatans', fn($q) =>
-                $q->where('tahun_anggaran', $tahun)->where('kepemilikan', $kep)
-            )->sum('total_nominal');
-
-            $realisasiKep[$kep] = KegiatanAnggaran::whereHas('kegiatan', fn($q) =>
-                $q->where('tahun_anggaran', $tahun)->where('kepemilikan', $kep)
-            )->sum('nominal_digunakan');
-        }
 
         // ── SASARAN & INDIKATOR ───────────────────────────────────────────
         $totalSasaran = Sasaran::where('tahun_anggaran', $tahun)->where('is_aktif', true)->count();
@@ -157,9 +146,9 @@ class DashboardController extends Controller
             'penyerapanPerBulan', 'penyerapanPerTriwulan', 'penyerapanPerPagu',
             'totalKegiatan', 'kegiatanBulanIni',
             'kegiatanTerbaru',
-            'paguKep', 'realisasiKep',
             'totalSasaran',
             'penyerapanPerSubBagian', 'maxRealisasiSubBagian'
         ));
     }
 }
+
