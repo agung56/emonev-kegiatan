@@ -7,6 +7,7 @@ use App\Models\Pagu;
 use App\Models\Sasaran;
 use App\Models\KegiatanAnggaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -14,7 +15,7 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $user      = auth()->user();
+        $user      = Auth::user();
         $tahunSekarang = (int) date('Y');
         $tahunList = collect()
             ->merge(Kegiatan::query()->distinct()->pluck('tahun_anggaran'))
