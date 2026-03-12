@@ -122,7 +122,6 @@
                     <label class="flex items-center text-slate-400 dark:text-slate-500 cursor-pointer hover:text-brand-primary transition-colors">
                         <input type="checkbox" name="remember" class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-800 text-brand-primary focus:ring-brand-primary mr-2 transition-all"> Ingat Saya
                     </label>
-                    <a href="#" class="text-brand-primary hover:text-brand-primaryHover underline decoration-2 underline-offset-4">Lupa Password?</a>
                 </div>
 
                 <button type="submit" class="w-full bg-brand-primary hover:bg-brand-primaryHover text-white font-extrabold py-4 rounded-2xl transition-all shadow-lg shadow-orange-500/10 active:scale-[0.97] text-xs uppercase tracking-widest">
