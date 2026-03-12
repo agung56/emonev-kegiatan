@@ -86,7 +86,7 @@
             <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
                     <h2 class="text-sm font-black text-slate-700 dark:text-white uppercase tracking-widest">Penggunaan Anggaran</h2>
-                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Pagu: {{ $kegiatan->pagu->kegiatan ?? '-' }}</p>
+                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Pagu: {{ $kegiatan->pagu?->kegiatan ?? '-' }}</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">

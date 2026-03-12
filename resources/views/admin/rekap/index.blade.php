@@ -265,8 +265,8 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                                     <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider mt-1 inline-block {{ $kg->kepemilikan === 'lembaga' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600' }}">{{ $kg->kepemilikan }}</span>
                                 </td>
                                 <td class="px-6 py-3">
-                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">{{ $kg->pagu->kegiatan ?? '—' }}</p>
-                                    <p class="text-[10px] text-brand-primary font-black mt-0.5">TA {{ $kg->pagu->tahun_anggaran ?? '' }}</p>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">{{ $kg->pagu?->kegiatan ?? '—' }}</p>
+                                    <p class="text-[10px] text-brand-primary font-black mt-0.5">TA {{ $kg->pagu?->tahun_anggaran ?? '' }}</p>
                                 </td>
                                 <td class="px-6 py-3 text-sm text-slate-500 font-medium">{{ $kg->lokus ?? '—' }}</td>
                                 <td class="px-6 py-3">
@@ -417,7 +417,7 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                         @php $totalKg = $kg->anggarans->sum('nominal_digunakan'); @endphp
                         <tr>
                             <td>{{ $kg->nama_kegiatan }}</td>
-                            <td>{{ $kg->pagu->kegiatan ?? '—' }} <span style="color:#666;font-size:8pt">(TA {{ $kg->pagu->tahun_anggaran ?? '' }})</span></td>
+                            <td>{{ $kg->pagu?->kegiatan ?? '—' }} <span style="color:#666;font-size:8pt">(TA {{ $kg->pagu?->tahun_anggaran ?? '' }})</span></td>
                             <td>{{ $kg->lokus ?? '—' }}</td>
                             <td>{{ $kg->anggarans->map(fn($a) => $a->paguDetail->nama_akun ?? '-')->join(', ') }}</td>
                             <td>{{ $kg->tanggal_mulai->format('d M') }} – {{ $kg->tanggal_selesai->format('d M Y') }}</td>

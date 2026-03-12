@@ -81,9 +81,9 @@
             </div>
             <div class="p-6 space-y-5">
                 <div class="space-y-1.5">
-                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Pagu Anggaran <span class="text-red-500">*</span></label>
+                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Pagu Anggaran</label>
                     <div class="relative">
-                        <select name="pagu_id" required @change="loadPaguDetails($event.target.value)" class="appearance-none w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-10">
+                        <select name="pagu_id" @change="loadPaguDetails($event.target.value)" class="appearance-none w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-10">
                             <option value="">— Pilih Pagu Anggaran —</option>
                             @foreach($pagus as $pagu)
                             <option value="{{ $pagu->id }}" {{ old('pagu_id')==$pagu->id?'selected':'' }}>{{ $pagu->kegiatan }} ({{ $pagu->tahun_anggaran }}) — Rp {{ number_format($pagu->total_nominal,0,',','.') }}</option>
@@ -91,6 +91,7 @@
                         </select>
                         <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
                     </div>
+                    <p class="text-[10px] text-slate-400 ml-1">Opsional jika tidak ada anggaran yang dikeluarkan.</p>
                 </div>
 
                 {{-- Info total pagu & sisa — muncul setelah pilih pagu --}}

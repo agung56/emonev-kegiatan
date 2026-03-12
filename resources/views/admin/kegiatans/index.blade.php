@@ -140,7 +140,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-col gap-1">
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $kegiatan->pagu->kegiatan ?? '-' }}</span>
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $kegiatan->pagu?->kegiatan ?? '-' }}</span>
                                 @php $totalAnggaran = $kegiatan->anggarans->sum('nominal_digunakan'); @endphp
                                 <span class="text-[11px] font-black text-brand-primary">Rp {{ number_format($totalAnggaran, 0, ',', '.') }}</span>
                             </div>

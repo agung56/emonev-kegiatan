@@ -27,9 +27,9 @@
 
         <div class="h-8 w-[1px] bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
 
-        <div class="flex items-center gap-3 relative" x-data="{ open: false }" @click.away="open = false">
-            <div class="text-right hidden sm:block">
-                <p class="text-[10px] md:text-xs font-black text-slate-800 dark:text-white leading-none uppercase truncate max-w-[100px]">{{ auth()->user()->name }}</p>
+        <div class="flex items-center gap-3 relative min-w-0" x-data="{ open: false }" @click.away="open = false">
+            <div class="text-right hidden sm:block min-w-0 max-w-[140px] md:max-w-[220px] lg:max-w-[320px]">
+                <p class="text-[10px] md:text-xs font-black text-slate-800 dark:text-white leading-none uppercase truncate">{{ auth()->user()->name }}</p>
                 <p class="text-[9px] md:text-[10px] font-bold text-brand-primary leading-none mt-1 uppercase">{{ auth()->user()->role }}</p>
             </div>
             

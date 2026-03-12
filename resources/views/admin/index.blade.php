@@ -13,58 +13,28 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
 <div class="p-6 space-y-6">
 
     {{-- ══ HERO SELAMAT DATANG ══ --}}
-    <div class="relative bg-brand-black rounded-3xl overflow-hidden p-7 flex flex-col md:flex-row md:items-center justify-between gap-5">
+    <div class="relative bg-white dark:bg-brand-black rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden p-7">
         {{-- bg decoration --}}
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-brand-primary/10"></div>
-            <div class="absolute right-32 -bottom-8 w-40 h-40 rounded-full bg-brand-primary/5"></div>
-            <div class="absolute top-1/2 right-64 w-2 h-2 rounded-full bg-brand-primary/30"></div>
-            <div class="absolute top-1/4 right-48 w-1 h-1 rounded-full bg-brand-primary/50"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.08),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(15,23,42,0.04),transparent_35%)] dark:hidden"></div>
+            <div class="absolute inset-0 hidden dark:block">
+                <div class="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-brand-primary/10"></div>
+                <div class="absolute right-32 -bottom-8 w-40 h-40 rounded-full bg-brand-primary/5"></div>
+                <div class="absolute top-1/2 right-64 w-2 h-2 rounded-full bg-brand-primary/30"></div>
+                <div class="absolute top-1/4 right-48 w-1 h-1 rounded-full bg-brand-primary/50"></div>
+            </div>
         </div>
 
         <div class="relative z-10 space-y-1.5">
-            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">E-MONEV · KPU KAB. PASURUAN</p>
-            <h1 class="text-2xl md:text-3xl font-black text-white leading-tight">
+            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">E-MONEV · KPU KAB. PASURUAN</p>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-tight">
                 Selamat Datang, <br class="md:hidden"><span class="text-brand-primary">{{ auth()->user()->name }}</span>! 👋
             </h1>
-            <p class="text-slate-400 text-sm font-medium">
-                {{ $today->translatedFormat('l, d F Y') }} &nbsp;·&nbsp; Tahun Anggaran <span class="text-white font-black">{{ $tahun }}</span>
+            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                {{ $today->translatedFormat('l, d F Y') }} &nbsp;·&nbsp; Tahun Anggaran <span class="text-slate-900 dark:text-white font-black">{{ $tahun }}</span>
             </p>
         </div>
 
-        {{-- Penyerapan besar di hero --}}
-        <div class="relative z-10 flex items-center gap-5">
-            {{-- Ring chart penyerapan --}}
-            <div class="relative w-24 h-24 shrink-0">
-                <svg class="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none"
-                        stroke="currentColor" stroke-width="3"
-                        stroke-linecap="round"
-                        stroke-dasharray="{{ $pctPenyerapan }}, 100"
-                        class="text-brand-primary transition-all duration-1000"/>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-lg font-black text-white leading-none">{{ $pctPenyerapan }}%</span>
-                    <span class="text-[8px] text-slate-400 uppercase font-black tracking-wide mt-0.5">Serap</span>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <div>
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Pagu</p>
-                    <p class="text-base font-black text-white">Rp {{ number_format($paguTahunIni/1000000, 1, ',', '.') }}Jt</p>
-                </div>
-                <div>
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Realisasi</p>
-                    <p class="text-base font-black text-brand-primary">Rp {{ number_format($realisasiTahunIni/1000000, 1, ',', '.') }}Jt</p>
-                </div>
-                <div>
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sisa</p>
-                    <p class="text-sm font-black text-slate-300">Rp {{ number_format($sisaAnggaran/1000000, 1, ',', '.') }}Jt</p>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -210,6 +180,10 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pagu</p>
                             <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($paguTahunIni/1000000, 1, ',', '.') }}Jt</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sisa</p>
+                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($sisaAnggaran/1000000, 1, ',', '.') }}Jt</p>
                         </div>
                     </div>
                 </div>
@@ -440,7 +414,7 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                             {{ $kg->nama_kegiatan }}
                         </p>
                         <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span class="text-[10px] text-slate-400 font-medium">{{ $kg->pagu->kegiatan ?? '-' }}</span>
+                            <span class="text-[10px] text-slate-400 font-medium">{{ $kg->pagu?->kegiatan ?? '-' }}</span>
                             @php $totalKg = $kg->anggarans->sum('nominal_digunakan'); @endphp
                             @if($totalKg > 0)
                             <span class="text-[10px] text-brand-primary font-black">Rp {{ number_format($totalKg, 0, ',', '.') }}</span>
@@ -489,3 +463,4 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
 @endonce
 
 @endsection
+

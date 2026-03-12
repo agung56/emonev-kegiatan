@@ -37,10 +37,13 @@ class KegiatanController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $input = $request->all();
+        $input['anggaran'] = $this->normalizeAnggaran($input['anggaran'] ?? []);
+
+        $validator = Validator::make($input, [
             'tahun_anggaran'            => 'required|digits:4|integer',
             'kepemilikan'               => 'required|in:lembaga,sekretariat',
-            'pagu_id'                   => 'required|exists:pagus,id',
+            'pagu_id'                   => 'nullable|exists:pagus,id',
             'sasaran_id'                => 'required|exists:sasarans,id',
             'nama_kegiatan'             => 'required|string|max:255',
             'lokus'                     => 'nullable|string|max:255',
@@ -51,11 +54,16 @@ class KegiatanController extends Controller
             'indikator_ids'             => 'required|array|min:1',
             'indikator_ids.*'           => 'exists:indikators,id',
             'anggaran'                  => 'nullable|array',
-            'anggaran.*.pagu_detail_id' => 'required_with:anggaran|exists:pagu_details,id',
-            'anggaran.*.nominal'        => 'required_with:anggaran|numeric|min:0',
+            'anggaran.*.pagu_detail_id' => 'required|exists:pagu_details,id',
+            'anggaran.*.nominal'        => 'required|numeric|gt:0',
             'dokumen'                   => 'required|array|min:1',
             'dokumen.*'                 => 'required|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
         ]);
+        $validator->after(function ($validator) use ($input) {
+            if (!empty($input['anggaran']) && empty($input['pagu_id'])) {
+                $validator->errors()->add('pagu_id', 'Pagu anggaran wajib dipilih jika ada pengeluaran anggaran.');
+            }
+        });
         $validated = $validator->validate();
 
         DB::beginTransaction();
@@ -63,7 +71,7 @@ class KegiatanController extends Controller
             $kegiatan = Kegiatan::create([
                 'tahun_anggaran'   => $validated['tahun_anggaran'],
                 'kepemilikan'      => $validated['kepemilikan'],
-                'pagu_id'          => $validated['pagu_id'],
+                'pagu_id'          => $validated['pagu_id'] ?? null,
                 'sasaran_id'       => $validated['sasaran_id'],
                 'nama_kegiatan'    => $validated['nama_kegiatan'],
                 'lokus'            => $validated['lokus'] ?? null,
@@ -78,8 +86,8 @@ class KegiatanController extends Controller
             $kegiatan->indikators()->sync($request->indikator_ids);
 
             // Save anggaran per akun
-            if ($request->filled('anggaran')) {
-                foreach ($request->anggaran as $item) {
+            if (!empty($validated['anggaran'])) {
+                foreach ($validated['anggaran'] as $item) {
                     KegiatanAnggaran::create([
                         'kegiatan_id'       => $kegiatan->id,
                         'pagu_detail_id'    => $item['pagu_detail_id'],
@@ -143,10 +151,13 @@ class KegiatanController extends Controller
 
     public function update(Request $request, Kegiatan $kegiatan)
     {
-        $validator = Validator::make($request->all(), [
+        $input = $request->all();
+        $input['anggaran'] = $this->normalizeAnggaran($input['anggaran'] ?? []);
+
+        $validator = Validator::make($input, [
             'tahun_anggaran'            => 'required|digits:4|integer',
             'kepemilikan'               => 'required|in:lembaga,sekretariat',
-            'pagu_id'                   => 'required|exists:pagus,id',
+            'pagu_id'                   => 'nullable|exists:pagus,id',
             'sasaran_id'                => 'required|exists:sasarans,id',
             'nama_kegiatan'             => 'required|string|max:255',
             'lokus'                     => 'nullable|string|max:255',
@@ -157,13 +168,17 @@ class KegiatanController extends Controller
             'indikator_ids'             => 'required|array|min:1',
             'indikator_ids.*'           => 'exists:indikators,id',
             'anggaran'                  => 'nullable|array',
-            'anggaran.*.pagu_detail_id' => 'required_with:anggaran|exists:pagu_details,id',
-            'anggaran.*.nominal'        => 'required_with:anggaran|numeric|min:0',
+            'anggaran.*.pagu_detail_id' => 'required|exists:pagu_details,id',
+            'anggaran.*.nominal'        => 'required|numeric|gt:0',
             'hapus_dokumen'             => 'nullable|array',
             'hapus_dokumen.*'           => 'exists:kegiatan_dokumens,id',
             'dokumen.*'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
         ]);
-        $validator->after(function ($validator) use ($request, $kegiatan) {
+        $validator->after(function ($validator) use ($request, $kegiatan, $input) {
+            if (!empty($input['anggaran']) && empty($input['pagu_id'])) {
+                $validator->errors()->add('pagu_id', 'Pagu anggaran wajib dipilih jika ada pengeluaran anggaran.');
+            }
+
             $hapusDokumen = $request->input('hapus_dokumen', []);
             $sisaDokumenLama = $kegiatan->dokumens()->whereNotIn('id', $hapusDokumen)->count();
             $dokumenBaru = is_array($request->file('dokumen')) ? count(array_filter($request->file('dokumen'))) : 0;
@@ -179,7 +194,7 @@ class KegiatanController extends Controller
             $kegiatan->update([
                 'tahun_anggaran'   => $validated['tahun_anggaran'],
                 'kepemilikan'      => $validated['kepemilikan'],
-                'pagu_id'          => $validated['pagu_id'],
+                'pagu_id'          => $validated['pagu_id'] ?? null,
                 'sasaran_id'       => $validated['sasaran_id'],
                 'nama_kegiatan'    => $validated['nama_kegiatan'],
                 'lokus'            => $validated['lokus'] ?? null,
@@ -194,8 +209,8 @@ class KegiatanController extends Controller
 
             // Update anggaran: hapus semua lalu insert ulang
             $kegiatan->anggarans()->delete();
-            if ($request->filled('anggaran')) {
-                foreach ($request->anggaran as $item) {
+            if (!empty($validated['anggaran'])) {
+                foreach ($validated['anggaran'] as $item) {
                     KegiatanAnggaran::create([
                         'kegiatan_id'       => $kegiatan->id,
                         'pagu_detail_id'    => $item['pagu_detail_id'],
@@ -306,5 +321,25 @@ class KegiatanController extends Controller
             });
 
         return response()->json($details);
+    }
+
+    private function normalizeAnggaran(array $anggaran): array
+    {
+        return collect($anggaran)
+            ->filter(function ($item) {
+                $paguDetailId = $item['pagu_detail_id'] ?? null;
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                return filled($paguDetailId) || $nominal > 0;
+            })
+            ->map(function ($item) {
+                return [
+                    'id' => $item['id'] ?? null,
+                    'pagu_detail_id' => $item['pagu_detail_id'] ?? null,
+                    'nominal' => (float) ($item['nominal'] ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
     }
 }
