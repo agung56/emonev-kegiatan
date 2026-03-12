@@ -6,6 +6,7 @@ use App\Models\SubBagian;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -31,10 +32,13 @@ class UserController extends Controller
      */
     public function store(Request $request) {
         $request->validate([
+            'nip' => 'nullable|string|max:255|unique:users,nip',
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'role' => 'required',
             // NIP tidak required di sini sesuai kondisi Anda
+        ], [
+            'nip.unique' => 'NIP sudah digunakan oleh user lain.',
         ]);
 
         // Jika password kosong, gunakan default 12345678
@@ -73,7 +77,24 @@ class UserController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, User $user) {
-        $user->update($request->only(['nip', 'name', 'email', 'role', 'sub_bagian_id', 'is_active']));
+        $validated = $request->validate([
+            'nip' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('users', 'nip')->ignore($user->id),
+            ],
+            'name' => 'required',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'role' => 'required',
+            'sub_bagian_id' => 'nullable|exists:sub_bagians,id',
+            'is_active' => 'nullable|boolean',
+        ], [
+            'nip.unique' => 'NIP sudah digunakan oleh user lain.',
+            'email.unique' => 'Email sudah digunakan oleh user lain.',
+        ]);
+
+        $user->update($validated);
         
         if ($request->password) {
             $user->update(['password' => Hash::make($request->password)]);

@@ -3,9 +3,17 @@
 
 @section('content')
 <div class="p-6 space-y-6" x-data="{ 
-    openModal: false, 
-    editMode: false, 
-    currentData: {},
+    openModal: @json($errors->any()), 
+    editMode: @json(old('_method') === 'PUT'), 
+    currentData: @js($errors->any() ? [
+        'id' => old('id'),
+        'nip' => old('nip'),
+        'name' => old('name'),
+        'email' => old('email'),
+        'role' => old('role', 'user'),
+        'sub_bagian_id' => old('sub_bagian_id', ''),
+        'is_active' => old('is_active', 1),
+    ] : []),
     showPassword: false, // Tambahkan ini
     toggleModal(edit = false, user = {}) {
         this.editMode = edit;
@@ -154,12 +162,16 @@
                 <form :action="editMode ? `{{ url('users') }}/${currentData.id}` : '{{ route('users.store') }}'" method="POST" class="p-8">
                     @csrf
                     <template x-if="editMode"><input type="hidden" name="_method" value="PUT"></template>
+                    <input type="hidden" name="id" :value="currentData.id ?? ''">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                         {{-- NIP --}}
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">NIP Pegawai</label>
-                            <input type="text" name="nip" x-model="currentData.nip" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
+                            <input type="text" name="nip" x-model="currentData.nip" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 @error('nip') border-red-400 focus:border-red-500 @else border-transparent focus:border-brand-primary @enderror rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
+                            @error('nip')
+                            <p class="text-[10px] font-bold text-red-500 ml-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         {{-- Nama --}}
