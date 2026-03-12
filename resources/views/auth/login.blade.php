@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }" :class="{ 'dark': darkMode }">
+<html lang="id" x-data="{ darkMode: localStorage.getItem('theme') === 'dark', showPassword: false }" :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -101,9 +101,20 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-300 group-focus-within:text-brand-primary transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         </span>
-                        <input type="password" name="password" required 
-                               class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 @error('password') border-red-500 @else border-transparent @enderror focus:border-brand-primary focus:bg-white dark:focus:bg-slate-800 rounded-2xl outline-none transition-all text-sm dark:text-white" 
+                        <input :type="showPassword ? 'text' : 'password'" name="password" required 
+                               class="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 @error('password') border-red-500 @else border-transparent @enderror focus:border-brand-primary focus:bg-white dark:focus:bg-slate-800 rounded-2xl outline-none transition-all text-sm dark:text-white" 
                                placeholder="••••••••">
+                        <button type="button" @click="showPassword = !showPassword"
+                                class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-300 hover:text-brand-primary focus:text-brand-primary transition-colors"
+                                :aria-label="showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'">
+                            <svg x-show="!showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                            </svg>
+                            <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587A2 2 0 0012 14a2 2 0 001.414-.586M9.88 5.09A9.77 9.77 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.721 9.721 0 01-4.152 5.208M6.228 6.228A9.723 9.723 0 002.458 12c1.274 4.057 5.065 7 9.542 7a9.76 9.76 0 004.062-.878"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -121,7 +132,7 @@
 
             <div class="w-full text-center">
                 <p class="text-[9px] text-slate-300 dark:text-slate-600 font-extrabold uppercase tracking-[0.4em]">
-                    &copy; MMXXVI KPU Kabupaten Pasuruan
+                    &copy; {{ now()->year }} KPU Kabupaten Pasuruan
                 </p>
             </div>
         </div>
