@@ -7,6 +7,7 @@ use App\Models\KegiatanAnggaran;
 use App\Models\KegiatanDokumen;
 use App\Models\Pagu;
 use App\Models\Sasaran;
+use App\Models\SubBagian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,7 @@ class KegiatanController extends Controller
 {
     public function index()
     {
-        $kegiatans = Kegiatan::with(['pagu', 'sasaran', 'indikators', 'anggarans', 'createdBy.subBagian'])
+        $kegiatans = Kegiatan::with(['pagu', 'sasaran', 'indikators', 'anggarans', 'createdBy.subBagian', 'subBagianPelaksana'])
             ->latest()
             ->paginate(10);
 
@@ -30,9 +31,10 @@ class KegiatanController extends Controller
 
     public function create()
     {
-        $pagus   = Pagu::with('details')->get();
+        $pagus   = Pagu::with('details.komponen')->get();
         $sasarans = Sasaran::with('indikators')->where('is_aktif', true)->get();
-        return view('admin.kegiatans.create', compact('pagus', 'sasarans'));
+        $subBagians = SubBagian::orderBy('nama_sub_bagian')->get();
+        return view('admin.kegiatans.create', compact('pagus', 'sasarans', 'subBagians'));
     }
 
     public function store(Request $request)
@@ -43,6 +45,7 @@ class KegiatanController extends Controller
         $validator = Validator::make($input, [
             'tahun_anggaran'            => 'required|digits:4|integer',
             'kepemilikan'               => 'required|in:lembaga,sekretariat',
+            'sub_bagian_id'             => 'nullable|exists:sub_bagians,id',
             'pagu_id'                   => 'nullable|exists:pagus,id',
             'sasaran_id'                => 'required|exists:sasarans,id',
             'nama_kegiatan'             => 'required|string|max:255',
@@ -57,11 +60,15 @@ class KegiatanController extends Controller
             'anggaran.*.pagu_detail_id' => 'required|exists:pagu_details,id',
             'anggaran.*.nominal'        => 'required|numeric|gt:0',
             'dokumen'                   => 'required|array|min:1',
-            'dokumen.*'                 => 'required|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
+            'dokumen.*'                 => 'required|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:5120',
         ]);
         $validator->after(function ($validator) use ($input) {
             if (!empty($input['anggaran']) && empty($input['pagu_id'])) {
                 $validator->errors()->add('pagu_id', 'Pagu anggaran wajib dipilih jika ada pengeluaran anggaran.');
+            }
+
+            if (auth()->user()?->role === 'admin' && empty($input['sub_bagian_id'])) {
+                $validator->errors()->add('sub_bagian_id', 'Sub Bagian pelaksana wajib dipilih untuk akun admin.');
             }
         });
         $validated = $validator->validate();
@@ -80,6 +87,9 @@ class KegiatanController extends Controller
                 'output_kegiatan'  => $validated['output_kegiatan'] ?? null,
                 'kendala_kegiatan' => $validated['kendala_kegiatan'] ?? null,
                 'created_by'       => auth()->id(),
+                'sub_bagian_id'    => auth()->user()?->role === 'admin'
+                    ? ($validated['sub_bagian_id'] ?? null)
+                    : auth()->user()?->sub_bagian_id,
             ]);
 
             // Sync indikators (many-to-many)
@@ -131,22 +141,24 @@ class KegiatanController extends Controller
     public function show(Kegiatan $kegiatan)
     {
         $kegiatan->load([
-            'pagu.details',
+            'pagu.details.komponen',
             'sasaran',
             'indikators',
-            'anggarans.paguDetail',
+            'anggarans.paguDetail.komponen',
             'dokumens',
             'createdBy.subBagian',
+            'subBagianPelaksana',
         ]);
         return view('admin.kegiatans.show', compact('kegiatan'));
     }
 
     public function edit(Kegiatan $kegiatan)
     {
-        $kegiatan->load(['indikators', 'anggarans', 'dokumens', 'pagu.details', 'sasaran.indikators']);
-        $pagus    = Pagu::with('details')->get();
+        $kegiatan->load(['indikators', 'anggarans.paguDetail.komponen', 'dokumens', 'pagu.details.komponen', 'sasaran.indikators', 'subBagianPelaksana']);
+        $pagus    = Pagu::with('details.komponen')->get();
         $sasarans = Sasaran::with('indikators')->where('is_aktif', true)->get();
-        return view('admin.kegiatans.edit', compact('kegiatan', 'pagus', 'sasarans'));
+        $subBagians = SubBagian::orderBy('nama_sub_bagian')->get();
+        return view('admin.kegiatans.edit', compact('kegiatan', 'pagus', 'sasarans', 'subBagians'));
     }
 
     public function update(Request $request, Kegiatan $kegiatan)
@@ -157,6 +169,7 @@ class KegiatanController extends Controller
         $validator = Validator::make($input, [
             'tahun_anggaran'            => 'required|digits:4|integer',
             'kepemilikan'               => 'required|in:lembaga,sekretariat',
+            'sub_bagian_id'             => 'nullable|exists:sub_bagians,id',
             'pagu_id'                   => 'nullable|exists:pagus,id',
             'sasaran_id'                => 'required|exists:sasarans,id',
             'nama_kegiatan'             => 'required|string|max:255',
@@ -172,11 +185,15 @@ class KegiatanController extends Controller
             'anggaran.*.nominal'        => 'required|numeric|gt:0',
             'hapus_dokumen'             => 'nullable|array',
             'hapus_dokumen.*'           => 'exists:kegiatan_dokumens,id',
-            'dokumen.*'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:10240',
+            'dokumen.*'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:5120',
         ]);
         $validator->after(function ($validator) use ($request, $kegiatan, $input) {
             if (!empty($input['anggaran']) && empty($input['pagu_id'])) {
                 $validator->errors()->add('pagu_id', 'Pagu anggaran wajib dipilih jika ada pengeluaran anggaran.');
+            }
+
+            if (auth()->user()?->role === 'admin' && empty($input['sub_bagian_id'])) {
+                $validator->errors()->add('sub_bagian_id', 'Sub Bagian pelaksana wajib dipilih untuk akun admin.');
             }
 
             $hapusDokumen = $request->input('hapus_dokumen', []);
@@ -202,6 +219,9 @@ class KegiatanController extends Controller
                 'tanggal_selesai'  => $validated['tanggal_selesai'],
                 'output_kegiatan'  => $validated['output_kegiatan'] ?? null,
                 'kendala_kegiatan' => $validated['kendala_kegiatan'] ?? null,
+                'sub_bagian_id'    => auth()->user()?->role === 'admin'
+                    ? ($validated['sub_bagian_id'] ?? null)
+                    : (auth()->user()?->sub_bagian_id ?? $kegiatan->sub_bagian_id),
             ]);
 
             // Sync indikators
@@ -299,7 +319,8 @@ class KegiatanController extends Controller
         $tahunAnggaran = $pagu->tahun_anggaran;
 
         $details = \App\Models\PaguDetail::where('pagu_id', $paguId)
-            ->select('id', 'nama_akun', 'nominal')
+            ->with('komponen:id,nama_komponen')
+            ->select('id', 'pagu_komponen_id', 'nama_akun', 'nominal')
             ->get()
             ->map(function ($d) use ($excludeKegiatanId, $tahunAnggaran) {
                 // Hitung total terpakai dari SEMUA kegiatan yang:
@@ -317,6 +338,7 @@ class KegiatanController extends Controller
 
                 $d->sudah_terpakai = (float) $sudahTerpakai;
                 $d->sisa_tersedia  = (float) $d->nominal - $sudahTerpakai;
+                $d->nama_komponen  = $d->komponen?->nama_komponen;
                 return $d;
             });
 

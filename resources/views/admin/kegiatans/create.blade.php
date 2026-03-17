@@ -55,6 +55,20 @@
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nama Kegiatan <span class="text-red-500">*</span></label>
                     <input type="text" name="nama_kegiatan" value="{{ old('nama_kegiatan') }}" required placeholder="Contoh: Pelatihan Manajemen Keuangan Daerah" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all placeholder:font-normal placeholder:text-slate-400">
                 </div>
+                @if(auth()->user()->role === 'admin')
+                <div class="space-y-1.5 md:col-span-2">
+                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Sub Bagian Pelaksana <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <select name="sub_bagian_id" required class="appearance-none w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-10">
+                            <option value="">— Pilih Sub Bagian —</option>
+                            @foreach($subBagians as $subBagian)
+                            <option value="{{ $subBagian->id }}" {{ old('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>{{ $subBagian->nama_sub_bagian }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
+                    </div>
+                </div>
+                @endif
                 <div class="space-y-1.5 md:col-span-2">
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Lokus / Tempat</label>
                     <input type="text" name="lokus" value="{{ old('lokus') }}" placeholder="Contoh: Aula Gedung A" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all placeholder:font-normal placeholder:text-slate-400">
@@ -121,7 +135,7 @@
                                             class="appearance-none w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-8">
                                         <option value="">— Pilih Akun —</option>
                                         <template x-for="d in paguDetails" :key="d.id">
-                                            <option :value="d.id" x-text="`${d.nama_akun} — Rp ${Number(d.nominal).toLocaleString('id-ID')}`"></option>
+                                            <option :value="d.id" x-text="`${d.nama_komponen ? `${d.nama_komponen} • ` : ''}${d.nama_akun} — Rp ${Number(d.nominal).toLocaleString('id-ID')}`"></option>
                                         </template>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
@@ -239,7 +253,7 @@
                     <div class="w-8 h-8 rounded-xl bg-brand-primary/10 flex items-center justify-center"><span class="text-brand-primary font-black text-sm">5</span></div>
                     <div>
                         <h2 class="text-sm font-black text-slate-700 dark:text-white uppercase tracking-widest">Dokumentasi Kegiatan <span class="text-red-500">*</span></h2>
-                        <p class="text-[10px] text-slate-400 font-medium">PDF · Gambar · Word · Excel — maks 10MB/file</p>
+                        <p class="text-[10px] text-slate-400 font-medium">PDF · Gambar · Word · Excel — maks 5MB/file</p>
                     </div>
                 </div>
                 <span x-show="files.length > 0"
@@ -268,7 +282,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-black text-slate-600 dark:text-slate-300">Seret file ke sini atau <span class="text-brand-primary">klik untuk browse</span></p>
-                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">PDF · JPG · PNG · DOCX · XLSX — Maks 10MB per file</p>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">PDF · JPG · PNG · DOCX · XLSX — Maks 5MB per file</p>
                         </div>
                     </div>
                 </div>
@@ -410,7 +424,7 @@ function kegiatanForm() {
             this.paguDetails.forEach(d => {
                 // sisa_tersedia = nominal pagu akun - sudah terpakai kegiatan lain
                 this.paguNamaAkun[d.id] = {
-                    nama:           d.nama_akun,
+                    nama:           d.nama_komponen ? `${d.nama_komponen} - ${d.nama_akun}` : d.nama_akun,
                     nominal:        parseFloat(d.nominal),        // pagu asli akun
                     sudahTerpakai:  parseFloat(d.sudah_terpakai), // terpakai kegiatan lain
                     sisaTersedia:   parseFloat(d.sisa_tersedia),  // yg masih bisa dipakai
@@ -454,7 +468,7 @@ function fileUploader() {
                 size: mb < 1 ? `${(file.size/1024).toFixed(1)} KB` : `${mb.toFixed(2)} MB`,
                 type: this._type(ext),
                 preview: null,
-                error: mb > 10 ? `Terlalu besar (${mb.toFixed(1)} MB, maks 10 MB)` : null,
+                error: mb > 5 ? `Terlalu besar (${mb.toFixed(1)} MB, maks 5 MB)` : null,
                 raw: file,
             };
             if (meta.type === 'image' && !meta.error) {

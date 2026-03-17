@@ -116,10 +116,10 @@
                                         <span class="text-[10px] text-slate-400 font-medium">📍 {{ $kegiatan->lokus }}</span>
                                         @endif
                                     </div>
-                                    @if($kegiatan->createdBy?->subBagian)
+                                    @if($kegiatan->subBagianPelaksana || $kegiatan->createdBy?->subBagian)
                                     <div class="flex items-center gap-1 mt-0.5">
                                         <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        <span class="text-[10px] text-slate-400 font-medium">{{ $kegiatan->createdBy->subBagian->nama_sub_bagian }}</span>
+                                        <span class="text-[10px] text-slate-400 font-medium">{{ $kegiatan->subBagianPelaksana->nama_sub_bagian ?? $kegiatan->createdBy?->subBagian?->nama_sub_bagian }}</span>
                                     </div>
                                     @endif
                                 </div>

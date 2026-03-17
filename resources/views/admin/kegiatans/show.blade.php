@@ -51,6 +51,10 @@
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Anggaran</span>
             <span class="text-sm font-black text-brand-primary">Rp {{ number_format($kegiatan->anggarans->sum('nominal_digunakan'), 0, ',', '.') }}</span>
         </div>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/5 p-4 flex flex-col gap-1">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sub Bagian Pelaksana</span>
+            <span class="text-sm font-black text-slate-800 dark:text-white">{{ $kegiatan->subBagianPelaksana->nama_sub_bagian ?? $kegiatan->createdBy?->subBagian?->nama_sub_bagian ?? '-' }}</span>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,6 +96,7 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-white/5">
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Komponen</th>
                                 <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Nama Akun</th>
                                 <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Pagu Akun</th>
                                 <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Digunakan</th>
@@ -100,18 +105,19 @@
                         <tbody class="divide-y divide-slate-100 dark:divide-white/5">
                             @forelse($kegiatan->anggarans as $ang)
                             <tr>
+                                <td class="px-6 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400">{{ $ang->paguDetail->komponen?->nama_komponen ?? '-' }}</td>
                                 <td class="px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $ang->paguDetail->nama_akun ?? '-' }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-500">Rp {{ number_format($ang->paguDetail->nominal ?? 0, 0, ',', '.') }}</td>
                                 <td class="px-6 py-3 text-sm font-black text-brand-primary text-right">Rp {{ number_format($ang->nominal_digunakan, 0, ',', '.') }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="3" class="px-6 py-6 text-center text-sm text-slate-400 italic">Belum ada data anggaran.</td></tr>
+                            <tr><td colspan="4" class="px-6 py-6 text-center text-sm text-slate-400 italic">Belum ada data anggaran.</td></tr>
                             @endforelse
                         </tbody>
                         @if($kegiatan->anggarans->count() > 0)
                         <tfoot>
                             <tr class="bg-slate-50 dark:bg-white/5">
-                                <td colspan="2" class="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Total</td>
+                                <td colspan="3" class="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Total</td>
                                 <td class="px-6 py-3 text-sm font-black text-brand-primary text-right">Rp {{ number_format($kegiatan->anggarans->sum('nominal_digunakan'), 0, ',', '.') }}</td>
                             </tr>
                         </tfoot>
@@ -204,6 +210,10 @@
                             <p class="text-[10px] text-brand-primary font-black mt-0.5">{{ $kegiatan->createdBy->subBagian->nama_sub_bagian }}</p>
                             @endif
                         </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400 font-medium">Pelaksana</span>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $kegiatan->subBagianPelaksana->nama_sub_bagian ?? $kegiatan->createdBy?->subBagian?->nama_sub_bagian ?? '-' }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-slate-400 font-medium">Dibuat pada</span>

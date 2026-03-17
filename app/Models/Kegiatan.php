@@ -12,7 +12,7 @@ class Kegiatan extends Model
     protected $fillable = [
         'tahun_anggaran', 'kepemilikan', 'pagu_id', 'sasaran_id',
         'nama_kegiatan', 'lokus', 'tanggal_mulai', 'tanggal_selesai',
-        'output_kegiatan', 'kendala_kegiatan', 'created_by',
+        'output_kegiatan', 'kendala_kegiatan', 'created_by', 'sub_bagian_id',
     ];
 
     protected $casts = [
@@ -48,5 +48,10 @@ class Kegiatan extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function subBagianPelaksana(): BelongsTo
+    {
+        return $this->belongsTo(SubBagian::class, 'sub_bagian_id');
     }
 }

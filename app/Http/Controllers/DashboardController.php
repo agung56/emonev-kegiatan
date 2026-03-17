@@ -110,7 +110,7 @@ class DashboardController extends Controller
                                 ->whereMonth('tanggal_mulai', $bulanIni)->count();
 
         // ── KEGIATAN TERBARU ──────────────────────────────────────────────
-        $kegiatanTerbaru = Kegiatan::with(['sasaran', 'pagu', 'anggarans', 'createdBy.subBagian'])
+        $kegiatanTerbaru = Kegiatan::with(['sasaran', 'pagu', 'anggarans', 'createdBy.subBagian', 'subBagianPelaksana'])
             ->where('tahun_anggaran', $tahun)
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -121,11 +121,10 @@ class DashboardController extends Controller
         $totalSasaran = Sasaran::where('tahun_anggaran', $tahun)->where('is_aktif', true)->count();
 
         // ── PENYERAPAN PER SUB BAGIAN ─────────────────────────────────────
-        // Jalur: sub_bagians → users (sub_bagian_id) → kegiatans (created_by) → kegiatan_anggarans
+        // Jalur: sub_bagians → kegiatans (sub_bagian_id) → kegiatan_anggarans
         $penyerapanPerSubBagian = DB::table('sub_bagians as sb')
-            ->leftJoin('users as u', 'u.sub_bagian_id', '=', 'sb.id')
             ->leftJoin('kegiatans as k', function ($join) use ($tahun) {
-                $join->on('k.created_by', '=', 'u.id')
+                $join->on('k.sub_bagian_id', '=', 'sb.id')
                      ->where('k.tahun_anggaran', '=', $tahun);
             })
             ->leftJoin('kegiatan_anggarans as ka', 'ka.kegiatan_id', '=', 'k.id')

@@ -12,6 +12,10 @@ class Pagu extends Model
         return $this->hasMany(PaguDetail::class);
     }
 
+    public function komponens() {
+        return $this->hasMany(PaguKomponen::class)->orderBy('id');
+    }
+
     public function kegiatans() {
         return $this->hasMany(Kegiatan::class);
     }

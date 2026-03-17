@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pagu;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaguController extends Controller
 {
@@ -11,18 +12,33 @@ class PaguController extends Controller
      * Display a listing of the resource.
      */
     public function index() {
-        $pagus = Pagu::with(['details'])->latest()->get();
+        $pagus = Pagu::with(['details.komponen', 'komponens.details'])->latest()->get();
 
         // Hitung total terpakai per pagu_detail dari kegiatan_anggarans
         // Filter per tahun anggaran agar tidak cross-tahun
         $pagus->each(function ($pagu) {
-            $pagu->details->each(function ($detail) use ($pagu) {
+            $usageByDetailId = [];
+
+            $pagu->details->each(function ($detail) use ($pagu, &$usageByDetailId) {
                 $terpakai = \App\Models\KegiatanAnggaran::where('pagu_detail_id', $detail->id)
                     ->whereHas('kegiatan', fn($q) => $q->where('tahun_anggaran', $pagu->tahun_anggaran))
                     ->sum('nominal_digunakan');
+
                 $detail->terpakai  = (float) $terpakai;
                 $detail->sisa      = (float) $detail->nominal - $terpakai;
+                $usageByDetailId[$detail->id] = [
+                    'terpakai' => $detail->terpakai,
+                    'sisa'     => $detail->sisa,
+                ];
             });
+
+            $pagu->komponens->each(function ($komponen) use (&$usageByDetailId) {
+                $komponen->details->each(function ($detail) use (&$usageByDetailId) {
+                    $detail->terpakai = $usageByDetailId[$detail->id]['terpakai'] ?? 0;
+                    $detail->sisa     = $usageByDetailId[$detail->id]['sisa'] ?? (float) $detail->nominal;
+                });
+            });
+
             $pagu->total_terpakai = $pagu->details->sum('terpakai');
             $pagu->sisa_pagu      = $pagu->details->sum('sisa');
         });
@@ -42,11 +58,44 @@ class PaguController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request) {
-        $pagu = Pagu::create($request->only('kegiatan', 'tahun_anggaran', 'total_nominal', 'keterangan'));
-        
-        foreach ($request->details as $detail) {
-            $pagu->details()->create($detail);
-        }
+        $input = $request->all();
+        $input['komponen_anggaran'] = $this->normalizeKomponenAnggaran($input['komponen_anggaran'] ?? []);
+
+        $validated = validator($input, [
+            'kegiatan'                           => 'required|string|max:255',
+            'tahun_anggaran'                    => 'required|digits:4|integer',
+            'total_nominal'                     => 'required|numeric|min:0',
+            'keterangan'                        => 'nullable|string',
+            'komponen_anggaran'                 => 'required|array|min:1',
+            'komponen_anggaran.*.nama_komponen' => 'required|string|max:255',
+            'komponen_anggaran.*.details'       => 'required|array|min:1',
+            'komponen_anggaran.*.details.*.nama_akun' => 'required|string|max:255',
+            'komponen_anggaran.*.details.*.nominal'   => 'required|numeric|min:0',
+        ])->validate();
+
+        DB::transaction(function () use ($validated) {
+            $pagu = Pagu::create(collect($validated)->only([
+                'kegiatan',
+                'tahun_anggaran',
+                'total_nominal',
+                'keterangan',
+            ])->all());
+
+            foreach ($validated['komponen_anggaran'] as $komponenData) {
+                $details = $komponenData['details'] ?? [];
+                unset($komponenData['details']);
+
+                $komponen = $pagu->komponens()->create($komponenData);
+                $komponen->details()->createMany(
+                    collect($details)->map(fn ($detail) => [
+                        'pagu_id'          => $pagu->id,
+                        'nama_akun'        => $detail['nama_akun'],
+                        'nominal'          => $detail['nominal'],
+                    ])->all()
+                );
+            }
+        });
+
         return back()->with('success', 'Pagu berhasil disimpan');
     }
 
@@ -70,11 +119,47 @@ class PaguController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, Pagu $pagu) {
-        $pagu->update($request->only('kegiatan', 'tahun_anggaran', 'total_nominal', 'keterangan'));
-        $pagu->details()->delete(); // Reset & Re-insert details
-        foreach ($request->details as $detail) {
-            $pagu->details()->create($detail);
-        }
+        $input = $request->all();
+        $input['komponen_anggaran'] = $this->normalizeKomponenAnggaran($input['komponen_anggaran'] ?? []);
+
+        $validated = validator($input, [
+            'kegiatan'                           => 'required|string|max:255',
+            'tahun_anggaran'                    => 'required|digits:4|integer',
+            'total_nominal'                     => 'required|numeric|min:0',
+            'keterangan'                        => 'nullable|string',
+            'komponen_anggaran'                 => 'required|array|min:1',
+            'komponen_anggaran.*.nama_komponen' => 'required|string|max:255',
+            'komponen_anggaran.*.details'       => 'required|array|min:1',
+            'komponen_anggaran.*.details.*.nama_akun' => 'required|string|max:255',
+            'komponen_anggaran.*.details.*.nominal'   => 'required|numeric|min:0',
+        ])->validate();
+
+        DB::transaction(function () use ($pagu, $validated) {
+            $pagu->update(collect($validated)->only([
+                'kegiatan',
+                'tahun_anggaran',
+                'total_nominal',
+                'keterangan',
+            ])->all());
+
+            $pagu->details()->delete(); // Reset & Re-insert details
+            $pagu->komponens()->delete();
+
+            foreach ($validated['komponen_anggaran'] as $komponenData) {
+                $details = $komponenData['details'] ?? [];
+                unset($komponenData['details']);
+
+                $komponen = $pagu->komponens()->create($komponenData);
+                $komponen->details()->createMany(
+                    collect($details)->map(fn ($detail) => [
+                        'pagu_id'          => $pagu->id,
+                        'nama_akun'        => $detail['nama_akun'],
+                        'nominal'          => $detail['nominal'],
+                    ])->all()
+                );
+            }
+        });
+
         return back();
     }
 
@@ -84,5 +169,43 @@ class PaguController extends Controller
     public function destroy(Pagu $pagu) {
         $pagu->delete();
         return back();
+    }
+
+    private function normalizeKomponenAnggaran(array $komponens): array
+    {
+        return collect($komponens)
+            ->map(function ($item) {
+                if (is_string($item)) {
+                    return [
+                        'nama_komponen' => trim($item),
+                        'details'       => [],
+                    ];
+                }
+
+                return [
+                    'nama_komponen' => trim((string) ($item['nama_komponen'] ?? '')),
+                    'details'       => $this->normalizeDetails($item['details'] ?? []),
+                ];
+            })
+            ->filter(fn ($item) => filled($item['nama_komponen']) || ! empty($item['details']))
+            ->values()
+            ->all();
+    }
+
+    private function normalizeDetails(array $details): array
+    {
+        return collect($details)
+            ->filter(function ($item) {
+                $namaAkun = trim((string) ($item['nama_akun'] ?? ''));
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                return filled($namaAkun) || $nominal > 0;
+            })
+            ->map(fn ($item) => [
+                'nama_akun' => trim((string) ($item['nama_akun'] ?? '')),
+                'nominal'   => (float) ($item['nominal'] ?? 0),
+            ])
+            ->values()
+            ->all();
     }
 }

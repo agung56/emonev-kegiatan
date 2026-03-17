@@ -54,6 +54,20 @@
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nama Kegiatan <span class="text-red-500">*</span></label>
                     <input type="text" name="nama_kegiatan" value="{{ old('nama_kegiatan',$kegiatan->nama_kegiatan) }}" required class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
                 </div>
+                @if(auth()->user()->role === 'admin')
+                <div class="space-y-1.5 md:col-span-2">
+                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Sub Bagian Pelaksana <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <select name="sub_bagian_id" required class="appearance-none w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-10">
+                            <option value="">— Pilih Sub Bagian —</option>
+                            @foreach($subBagians as $subBagian)
+                            <option value="{{ $subBagian->id }}" {{ old('sub_bagian_id', $kegiatan->sub_bagian_id) == $subBagian->id ? 'selected' : '' }}>{{ $subBagian->nama_sub_bagian }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
+                    </div>
+                </div>
+                @endif
                 <div class="space-y-1.5 md:col-span-2">
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Lokus / Tempat</label>
                     <input type="text" name="lokus" value="{{ old('lokus',$kegiatan->lokus) }}" class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
@@ -121,7 +135,7 @@
                                             class="appearance-none w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-8">
                                         <option value="">— Pilih Akun —</option>
                                         <template x-for="d in paguDetails" :key="d.id">
-                                            <option :value="d.id" :selected="row.pagu_detail_id == d.id" x-text="`${d.nama_akun} — Rp ${Number(d.nominal).toLocaleString('id-ID')}`"></option>
+                                            <option :value="d.id" :selected="row.pagu_detail_id == d.id" x-text="`${d.nama_komponen ? `${d.nama_komponen} • ` : ''}${d.nama_akun} — Rp ${Number(d.nominal).toLocaleString('id-ID')}`"></option>
                                         </template>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
@@ -352,7 +366,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-black text-slate-600 dark:text-slate-300">Seret atau <span class="text-brand-primary">klik untuk browse</span></p>
-                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">PDF · JPG · PNG · DOCX · XLSX — Maks 10MB/file</p>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">PDF · JPG · PNG · DOCX · XLSX — Maks 5MB/file</p>
                         </div>
                     </div>
                 </div>
@@ -413,7 +427,7 @@
 
                 <div x-show="newFiles.some(f=>f.error)" x-transition class="flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl">
                     <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
-                    <span class="text-xs font-bold text-red-600 dark:text-red-400">Beberapa file melebihi 10MB. Hapus atau ganti sebelum menyimpan.</span>
+                    <span class="text-xs font-bold text-red-600 dark:text-red-400">Beberapa file melebihi 5MB. Hapus atau ganti sebelum menyimpan.</span>
                 </div>
 
             </div>
@@ -462,7 +476,7 @@ function kegiatanForm() {
                     )
                     ->sum('nominal_digunakan');
                 $map[$d->id] = [
-                    'nama'          => $d->nama_akun,
+                    'nama'          => $d->komponen?->nama_komponen ? ($d->komponen->nama_komponen . ' - ' . $d->nama_akun) : $d->nama_akun,
                     'nominal'       => (float)$d->nominal,
                     'sudahTerpakai' => (float)$terpakai,
                     'sisaTersedia'  => (float)($d->nominal - $terpakai),
@@ -519,7 +533,7 @@ function kegiatanForm() {
             this.paguNamaAkun = {};
             this.paguDetails.forEach(d => {
                 this.paguNamaAkun[d.id] = {
-                    nama:           d.nama_akun,
+                    nama:           d.nama_komponen ? `${d.nama_komponen} - ${d.nama_akun}` : d.nama_akun,
                     nominal:        parseFloat(d.nominal),
                     sudahTerpakai:  parseFloat(d.sudah_terpakai),
                     sisaTersedia:   parseFloat(d.sisa_tersedia),
@@ -581,7 +595,7 @@ function fileManager() {
                 size: mb < 1 ? `${(file.size/1024).toFixed(1)} KB` : `${mb.toFixed(2)} MB`,
                 type: this._type(ext),
                 preview: null,
-                error: mb > 10 ? `Terlalu besar (${mb.toFixed(1)} MB, maks 10 MB)` : null,
+                error: mb > 5 ? `Terlalu besar (${mb.toFixed(1)} MB, maks 5 MB)` : null,
                 raw: file,
             };
             if (meta.type === 'image' && !meta.error) {
