@@ -39,7 +39,7 @@
         } else {
             this.currentData = { 
                 kegiatan: '', 
-                komponens: [{ nama_komponen: '', details: [{ nama_akun: '', nominal: 0 }] }],
+                komponens: [{ id: null, nama_komponen: '', details: [{ id: null, nama_akun: '', nominal: 0 }] }],
                 tahun_anggaran: new Date().getFullYear(), 
                 total_nominal: 0, 
                 keterangan: '', 
@@ -52,24 +52,28 @@
     normalizeKomponens(komponens = [], legacyDetails = []) {
         if (!Array.isArray(komponens) || komponens.length === 0) {
             return [{
+                id: null,
                 nama_komponen: '',
                 details: Array.isArray(legacyDetails) && legacyDetails.length
                     ? legacyDetails.map((detail) => ({
+                        id: detail?.id ?? null,
                         nama_akun: detail?.nama_akun ?? '',
                         nominal: detail?.nominal ?? 0,
                     }))
-                    : [{ nama_akun: '', nominal: 0 }]
+                    : [{ id: null, nama_akun: '', nominal: 0 }]
             }];
         }
 
         const normalized = komponens.map((komponen) => ({
+            id: komponen?.id ?? null,
             nama_komponen: komponen?.nama_komponen ?? '',
             details: Array.isArray(komponen?.details) && komponen.details.length
                 ? komponen.details.map((detail) => ({
+                    id: detail?.id ?? null,
                     nama_akun: detail?.nama_akun ?? '',
                     nominal: detail?.nominal ?? 0,
                 }))
-                : [{ nama_akun: '', nominal: 0 }]
+                : [{ id: null, nama_akun: '', nominal: 0 }]
         }));
 
         if (Array.isArray(legacyDetails) && legacyDetails.length) {
@@ -78,6 +82,7 @@
                 normalized[0].details = [
                     ...normalized[0].details.filter((detail) => detail.nama_akun || detail.nominal),
                     ...orphans.map((detail) => ({
+                        id: detail?.id ?? null,
                         nama_akun: detail?.nama_akun ?? '',
                         nominal: detail?.nominal ?? 0,
                     }))
@@ -89,7 +94,7 @@
     },
 
     addKomponen() {
-        this.currentData.komponens.push({ nama_komponen: '', details: [{ nama_akun: '', nominal: 0 }] });
+        this.currentData.komponens.push({ id: null, nama_komponen: '', details: [{ id: null, nama_akun: '', nominal: 0 }] });
     },
 
     removeKomponen(index) {
@@ -100,7 +105,7 @@
     },
 
     addDetail(komponenIndex) {
-        this.currentData.komponens[komponenIndex].details.push({ nama_akun: '', nominal: 0 });
+        this.currentData.komponens[komponenIndex].details.push({ id: null, nama_akun: '', nominal: 0 });
     },
 
     removeDetail(komponenIndex, detailIndex) {
@@ -362,6 +367,7 @@
                             <div class="space-y-3">
                                 <template x-for="(komponen, index) in currentData.komponens" :key="`komponen-${index}`">
                                     <div class="space-y-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
+                                        <input type="hidden" :name="`komponen_anggaran[${index}][id]`" :value="komponen.id || ''">
                                         <div class="flex items-center gap-3">
                                             <input type="text" :name="`komponen_anggaran[${index}][nama_komponen]`" x-model="komponen.nama_komponen" placeholder="Contoh: Belanja Barang dan Jasa" class="w-full bg-white dark:bg-slate-800 border-none px-4 py-3 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold placeholder:font-medium placeholder:text-slate-400">
                                             <button type="button" @click="removeKomponen(index)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
@@ -378,6 +384,7 @@
                                             </div>
                                             <template x-for="(detail, detailIndex) in komponen.details" :key="`detail-${index}-${detailIndex}`">
                                                 <div class="group flex flex-col md:flex-row gap-3 p-4 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-brand-primary/50 transition-all">
+                                                    <input type="hidden" :name="`komponen_anggaran[${index}][details][${detailIndex}][id]`" :value="detail.id || ''">
                                                     <div class="flex-1">
                                                         <input type="text" :name="`komponen_anggaran[${index}][details][${detailIndex}][nama_akun]`" x-model="detail.nama_akun" placeholder="Nama Akun Belanja..." required 
                                                             class="w-full bg-slate-50 dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
