@@ -15,7 +15,9 @@
         'komponens' => collect(old('komponen_anggaran', []))
             ->map(fn ($komponen) => [
                 'id' => blank($komponen['id'] ?? null) ? null : (int) $komponen['id'],
-                'nama_komponen' => $komponen['nama_komponen'] ?? '',
+                'nama_komponen' => filled($komponen['nama_komponen'] ?? '')
+                    ? $komponen['nama_komponen']
+                    : (filled($komponen['details'] ?? []) ? 'Komponen Utama' : ''),
                 'details' => collect($komponen['details'] ?? [])
                     ->map(fn ($detail) => [
                         'id' => blank($detail['id'] ?? null) ? null : (int) $detail['id'],
@@ -74,7 +76,7 @@
         if (!Array.isArray(komponens) || komponens.length === 0) {
             return [{
                 id: null,
-                nama_komponen: '',
+                nama_komponen: Array.isArray(legacyDetails) && legacyDetails.length ? 'Komponen Utama' : '',
                 details: Array.isArray(legacyDetails) && legacyDetails.length
                     ? legacyDetails.map((detail) => ({
                         id: detail?.id ?? null,
@@ -87,7 +89,9 @@
 
         const normalized = komponens.map((komponen) => ({
             id: komponen?.id ?? null,
-            nama_komponen: komponen?.nama_komponen ?? '',
+            nama_komponen: (komponen?.nama_komponen && String(komponen.nama_komponen).trim())
+                ? komponen.nama_komponen
+                : ((Array.isArray(komponen?.details) && komponen.details.length) ? 'Komponen Utama' : ''),
             details: Array.isArray(komponen?.details) && komponen.details.length
                 ? komponen.details.map((detail) => ({
                     id: detail?.id ?? null,

@@ -184,15 +184,20 @@ class PaguController extends Controller
                 if (is_string($item)) {
                     return [
                         'id'            => null,
-                        'nama_komponen' => trim($item),
+                        'nama_komponen' => $this->resolveNamaKomponen(trim($item), []),
                         'details'       => [],
                     ];
                 }
 
+                $details = $this->normalizeDetails($item['details'] ?? []);
+
                 return [
                     'id'            => blank($item['id'] ?? null) ? null : (int) $item['id'],
-                    'nama_komponen' => trim((string) ($item['nama_komponen'] ?? '')),
-                    'details'       => $this->normalizeDetails($item['details'] ?? []),
+                    'nama_komponen' => $this->resolveNamaKomponen(
+                        trim((string) ($item['nama_komponen'] ?? '')),
+                        $details
+                    ),
+                    'details'       => $details,
                 ];
             })
             ->filter(fn ($item) => filled($item['nama_komponen']) || ! empty($item['details']))
@@ -216,6 +221,15 @@ class PaguController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    private function resolveNamaKomponen(string $namaKomponen, array $details): string
+    {
+        if (filled($namaKomponen)) {
+            return $namaKomponen;
+        }
+
+        return ! empty($details) ? 'Komponen Utama' : '';
     }
 
     private function syncKomponenAnggaran(Pagu $pagu, array $komponens): void
