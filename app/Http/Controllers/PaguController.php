@@ -76,30 +76,38 @@ class PaguController extends Controller
             'komponen_anggaran.*.details.*.nominal'   => 'required|numeric|min:0',
         ])->validate();
 
-        DB::transaction(function () use ($validated) {
-            $pagu = Pagu::create(collect($validated)->only([
-                'kegiatan',
-                'tahun_anggaran',
-                'total_nominal',
-                'keterangan',
-            ])->all());
+        try {
+            DB::transaction(function () use ($validated) {
+                $pagu = Pagu::create(collect($validated)->only([
+                    'kegiatan',
+                    'tahun_anggaran',
+                    'total_nominal',
+                    'keterangan',
+                ])->all());
 
-            foreach ($validated['komponen_anggaran'] as $komponenData) {
-                $details = $komponenData['details'] ?? [];
-                unset($komponenData['details']);
+                foreach ($validated['komponen_anggaran'] as $komponenData) {
+                    $details = $komponenData['details'] ?? [];
+                    unset($komponenData['details']);
 
-                $komponen = $pagu->komponens()->create($komponenData);
-                $komponen->details()->createMany(
-                    collect($details)->map(fn ($detail) => [
-                        'pagu_id'          => $pagu->id,
-                        'nama_akun'        => $detail['nama_akun'],
-                        'nominal'          => $detail['nominal'],
-                    ])->all()
-                );
-            }
-        });
+                    $komponen = $pagu->komponens()->create($komponenData);
+                    $komponen->details()->createMany(
+                        collect($details)->map(fn ($detail) => [
+                            'pagu_id'          => $pagu->id,
+                            'nama_akun'        => $detail['nama_akun'],
+                            'nominal'          => $detail['nominal'],
+                        ])->all()
+                    );
+                }
+            });
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan pagu: ' . $e->getMessage());
+        }
 
-        return back()->with('success', 'Pagu berhasil disimpan');
+        return redirect()->route('pagu.index')->with('success', 'Pagu berhasil disimpan');
     }
 
     /**
@@ -139,18 +147,26 @@ class PaguController extends Controller
             'komponen_anggaran.*.details.*.nominal'   => 'required|numeric|min:0',
         ])->validate();
 
-        DB::transaction(function () use ($pagu, $validated) {
-            $pagu->update(collect($validated)->only([
-                'kegiatan',
-                'tahun_anggaran',
-                'total_nominal',
-                'keterangan',
-            ])->all());
+        try {
+            DB::transaction(function () use ($pagu, $validated) {
+                $pagu->update(collect($validated)->only([
+                    'kegiatan',
+                    'tahun_anggaran',
+                    'total_nominal',
+                    'keterangan',
+                ])->all());
 
-            $this->syncKomponenAnggaran($pagu, $validated['komponen_anggaran']);
-        });
+                $this->syncKomponenAnggaran($pagu, $validated['komponen_anggaran']);
+            });
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal memperbarui pagu: ' . $e->getMessage());
+        }
 
-        return back()->with('success', 'Pagu berhasil diperbarui');
+        return redirect()->route('pagu.index')->with('success', 'Pagu berhasil diperbarui');
     }
 
     /**

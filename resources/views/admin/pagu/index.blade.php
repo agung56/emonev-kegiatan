@@ -3,10 +3,31 @@
 
 @section('content')
 <div class="p-6 space-y-6" x-data="{ 
-    openModal: false, 
-    editMode: false, 
+    openModal: @json($errors->any()), 
+    editMode: @json(old('_method') === 'PUT'), 
     expandedRows: [],
-    currentData: { komponens: [] },
+    currentData: @js($errors->any() ? [
+        'id' => old('id'),
+        'kegiatan' => old('kegiatan', ''),
+        'tahun_anggaran' => old('tahun_anggaran', now()->year),
+        'total_nominal' => old('total_nominal', 0),
+        'keterangan' => old('keterangan', ''),
+        'komponens' => collect(old('komponen_anggaran', []))
+            ->map(fn ($komponen) => [
+                'id' => blank($komponen['id'] ?? null) ? null : (int) $komponen['id'],
+                'nama_komponen' => $komponen['nama_komponen'] ?? '',
+                'details' => collect($komponen['details'] ?? [])
+                    ->map(fn ($detail) => [
+                        'id' => blank($detail['id'] ?? null) ? null : (int) $detail['id'],
+                        'nama_akun' => $detail['nama_akun'] ?? '',
+                        'nominal' => (float) ($detail['nominal'] ?? 0),
+                    ])
+                    ->values()
+                    ->all(),
+            ])
+            ->values()
+            ->all(),
+    ] : ['komponens' => []]),
 
     toggleRow(id) {
         if (this.expandedRows.includes(id)) {
@@ -123,6 +144,33 @@
         }, 0);
     }
 }">
+
+    @if(session('success'))
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-2"
+         class="flex items-center gap-3 px-5 py-4 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 rounded-2xl text-sm font-bold">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="flex items-center gap-3 px-5 py-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-2xl text-sm font-bold">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
+        {{ session('error') }}
+    </div>
+    @endif
+
+    @if($errors->any())
+    <div class="flex flex-col gap-2 px-5 py-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-2xl text-sm">
+        <span class="font-black uppercase text-xs tracking-widest">Terdapat kesalahan saat menyimpan pagu:</span>
+        @foreach($errors->all() as $error)
+        <span class="font-medium">• {{ $error }}</span>
+        @endforeach
+    </div>
+    @endif
     
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -222,7 +270,7 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-1">
-                                <button @click="toggleModal(true, {{ $pagu->toJson() }})" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all">
+                                <button @click="toggleModal(true, @js($pagu))" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
                                 <form action="{{ route('pagu.destroy', $pagu->id) }}" method="POST" onsubmit="return confirm('Hapus pagu?')">
@@ -349,6 +397,7 @@
                 <form :action="editMode ? `/pagu/${currentData.id}` : '{{ route('pagu.store') }}'" method="POST" class="p-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
                     @csrf
                     <template x-if="editMode"><input type="hidden" name="_method" value="PUT"></template>
+                    <input type="hidden" name="id" :value="currentData.id || ''">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div class="md:col-span-2 space-y-1.5">
