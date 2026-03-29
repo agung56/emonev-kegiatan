@@ -5,7 +5,6 @@
 <div class="p-6 space-y-6" x-data="{
     openModal: false,
     editMode: false,
-    activeIndexSelect: null,
     expandedRows: [],
     currentData: { indikators: [] },
     satuanOptions: @js(\App\Models\Indikator::SATUAN_OPTIONS),
@@ -374,21 +373,29 @@
                                                placeholder="Nama indikator kinerja..." required
                                                class="w-full bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
                                         <template x-if="ind.satuan === 'indeks'">
-                                            <div class="relative">
-                                                <select :name="`indikators[${index}][target]`"
-                                                        x-model="ind.target"
-                                                        @focus="activeIndexSelect = index"
-                                                        @blur="activeIndexSelect = null"
-                                                        required
-                                                        :class="activeIndexSelect === index ? 'text-slate-800 dark:text-white' : 'text-transparent'"
-                                                        class="w-full bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold appearance-none cursor-pointer">
+                                            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                                                <input type="hidden"
+                                                       :name="`indikators[${index}][target]`"
+                                                       :value="ind.target"
+                                                       required>
+                                                <button type="button"
+                                                        @click="open = !open"
+                                                        class="flex w-full items-center justify-between gap-3 bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold text-slate-800 dark:text-white cursor-pointer">
+                                                    <span x-text="getIndexOption(ind.target)?.code || 'Pilih'"></span>
+                                                    <svg class="h-4 w-4 shrink-0 text-slate-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </button>
+                                                <div x-show="open"
+                                                     x-transition
+                                                     class="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900">
                                                     <template x-for="option in indexTargetOptions" :key="option.value">
-                                                        <option :value="option.value" x-text="option.label"></option>
+                                                        <button type="button"
+                                                                @click="ind.target = option.value; open = false"
+                                                                class="block w-full px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                                                                x-text="option.label"></button>
                                                     </template>
-                                                </select>
-                                                <span x-show="activeIndexSelect !== index"
-                                                      class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-sm font-bold text-slate-800 dark:text-white"
-                                                      x-text="getIndexOption(ind.target)?.code || ''"></span>
+                                                </div>
                                             </div>
                                         </template>
                                         <template x-if="ind.satuan !== 'indeks'">
