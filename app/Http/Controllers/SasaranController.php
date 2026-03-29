@@ -65,20 +65,7 @@ class SasaranController extends Controller
             'indikators'                  => 'required|array|min:1',
             'indikators.*.id'             => 'nullable|integer',
             'indikators.*.nama_indikator' => 'required|string|max:255',
-            'indikators.*.target'         => [
-                'required',
-                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
-                    $satuanAttribute = str_replace('.target', '.satuan', $attribute);
-                    $satuan = data_get($request->all(), $satuanAttribute);
-
-                    if (! Indikator::isValidTarget($satuan, $value)) {
-                        $fail($satuan === 'indeks'
-                            ? 'Pilihan target untuk satuan indeks tidak valid.'
-                            : 'Target harus berupa angka minimal 0.'
-                        );
-                    }
-                },
-            ],
+            'indikators.*.target'         => 'required|numeric|min:0',
             'indikators.*.satuan'         => 'required|in:' . implode(',', Indikator::SATUAN_OPTIONS),
         ]);
     }
@@ -90,7 +77,6 @@ class SasaranController extends Controller
 
         foreach ($indikators as $indikator) {
             $payload = Arr::only($indikator, ['nama_indikator', 'target', 'satuan']);
-            $payload['target'] = Indikator::normalizeTargetForStorage($payload['satuan'] ?? null, $payload['target'] ?? null);
             $indikatorId = isset($indikator['id']) ? (int) $indikator['id'] : null;
 
             if ($indikatorId && $existingIndikators->has($indikatorId)) {
