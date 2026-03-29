@@ -77,7 +77,14 @@
                         @forelse($kegiatan->indikators as $ind)
                         <div class="flex items-start gap-2.5 p-3 bg-blue-50/50 dark:bg-blue-500/5 rounded-2xl">
                             <div class="w-1.5 h-1.5 rounded-full bg-brand-primary mt-1.5 shrink-0"></div>
-                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $ind->nama_indikator }}</span>
+                            <div class="min-w-0">
+                                <span class="block text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $ind->nama_indikator }}</span>
+                                @if($ind->target_label)
+                                <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100/80 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 uppercase">
+                                    Target: {{ $ind->target_label }}
+                                </span>
+                                @endif
+                            </div>
                         </div>
                         @empty
                         <span class="text-sm text-slate-400 italic">Tidak ada indikator terpilih.</span>

@@ -5,8 +5,50 @@
 <div class="p-6 space-y-6" x-data="{
     openModal: false,
     editMode: false,
+    activeIndexSelect: null,
     expandedRows: [],
     currentData: { indikators: [] },
+    satuanOptions: @js(\App\Models\Indikator::SATUAN_OPTIONS),
+    indexTargetOptions: @js(\App\Models\Indikator::getIndexTargetOptionsForSelect()),
+
+    emptyIndikator() {
+        return { id: null, nama_indikator: '', target: '', satuan: 'laporan' };
+    },
+
+    normalizeIndikator(indikator = {}) {
+        const satuan = indikator.satuan ?? 'laporan';
+
+        return {
+            id: indikator.id ?? null,
+            nama_indikator: indikator.nama_indikator ?? '',
+            target: satuan === 'indeks' ? this.normalizeIndexTarget(indikator.target) : (indikator.target ?? ''),
+            satuan,
+        };
+    },
+
+    normalizeIndexTarget(target) {
+        if (target === null || target === '') {
+            return '';
+        }
+
+        const numericTarget = parseFloat(target);
+        if (Number.isNaN(numericTarget)) {
+            return '';
+        }
+
+        const option = this.indexTargetOptions.find(option => numericTarget <= parseFloat(option.value));
+        return option ? option.value : '';
+    },
+
+    handleSatuanChange(indikator) {
+        if (indikator.satuan === 'indeks') {
+            indikator.target = this.normalizeIndexTarget(indikator.target);
+        }
+    },
+
+    getIndexOption(value) {
+        return this.indexTargetOptions.find(option => option.value === String(value)) || null;
+    },
 
     toggleRow(id) {
         if (this.expandedRows.includes(id)) {
@@ -20,21 +62,22 @@
         this.editMode = edit;
         if (edit && data) {
             this.currentData = JSON.parse(JSON.stringify(data));
-            if (!this.currentData.indikators) this.currentData.indikators = [];
+            this.currentData.indikators = (this.currentData.indikators || []).map(ind => this.normalizeIndikator(ind));
+            if (!this.currentData.indikators.length) this.currentData.indikators = [this.emptyIndikator()];
         } else {
             this.currentData = {
                 nama_sasaran: '',
                 kepemilikan: 'lembaga',
                 tahun_anggaran: new Date().getFullYear(),
                 is_aktif: true,
-                indikators: [{ nama_indikator: '' }]
+                indikators: [this.emptyIndikator()]
             };
         }
         this.openModal = true;
     },
 
     addIndikator() {
-        this.currentData.indikators.push({ nama_indikator: '' });
+        this.currentData.indikators.push(this.emptyIndikator());
     },
 
     removeIndikator(index) {
@@ -45,6 +88,13 @@
 }">
 
     {{-- Flash Message --}}
+    @if($errors->any())
+    <div class="flex flex-col gap-2 px-5 py-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-2xl text-sm">
+        <span class="font-black uppercase text-xs tracking-widest">Terdapat kesalahan input:</span>
+        @foreach($errors->all() as $error)<span class="font-medium">• {{ $error }}</span>@endforeach
+    </div>
+    @endif
+
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
          x-transition:leave="transition ease-in duration-300"
@@ -200,6 +250,8 @@
                                         <tr>
                                             <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest w-10">#</th>
                                             <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Indikator Kinerja</th>
+                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Target</th>
+                                            <th class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Satuan</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-50 dark:divide-white/5">
@@ -207,10 +259,12 @@
                                         <tr>
                                             <td class="px-4 py-3 text-xs font-black text-slate-400">{{ $i + 1 }}</td>
                                             <td class="px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300">{{ $ind->nama_indikator }}</td>
+                                            <td class="px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300">{{ $ind->target_display ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">{{ $ind->satuan ?? '-' }}</td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="2" class="px-4 py-4 text-center text-xs text-slate-400 font-bold">Belum ada indikator.</td>
+                                            <td colspan="4" class="px-4 py-4 text-center text-xs text-slate-400 font-bold">Belum ada indikator.</td>
                                         </tr>
                                         @endforelse
                                     </tbody>
@@ -311,15 +365,53 @@
                             </div>
                             <div class="space-y-3">
                                 <template x-for="(ind, index) in currentData.indikators" :key="index">
-                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-brand-primary/50 transition-all">
-                                        <span class="text-[11px] font-black text-slate-300 w-6 text-center shrink-0" x-text="index + 1"></span>
+                                    <div class="grid grid-cols-1 md:grid-cols-[auto_minmax(0,1fr)_minmax(240px,1.4fr)_150px_auto] gap-3 items-start p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-brand-primary/50 transition-all">
+                                        <input type="hidden" :name="`indikators[${index}][id]`" :value="ind.id || ''">
+                                        <span class="text-[11px] font-black text-slate-300 w-6 text-center shrink-0 md:pt-3" x-text="index + 1"></span>
                                         <input type="text"
                                                :name="`indikators[${index}][nama_indikator]`"
                                                x-model="ind.nama_indikator"
                                                placeholder="Nama indikator kinerja..." required
-                                               class="flex-1 bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
+                                               class="w-full bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
+                                        <template x-if="ind.satuan === 'indeks'">
+                                            <div class="relative">
+                                                <select :name="`indikators[${index}][target]`"
+                                                        x-model="ind.target"
+                                                        @focus="activeIndexSelect = index"
+                                                        @blur="activeIndexSelect = null"
+                                                        required
+                                                        :class="activeIndexSelect === index ? 'text-slate-800 dark:text-white' : 'text-transparent'"
+                                                        class="w-full bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold appearance-none cursor-pointer">
+                                                    <template x-for="option in indexTargetOptions" :key="option.value">
+                                                        <option :value="option.value" x-text="option.label"></option>
+                                                    </template>
+                                                </select>
+                                                <span x-show="activeIndexSelect !== index"
+                                                      class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-sm font-bold text-slate-800 dark:text-white"
+                                                      x-text="getIndexOption(ind.target)?.code || ''"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="ind.satuan !== 'indeks'">
+                                            <input type="number"
+                                                   :name="`indikators[${index}][target]`"
+                                                   x-model="ind.target"
+                                                   min="0"
+                                                   step="0.01"
+                                                   placeholder="Target"
+                                                   required
+                                                   class="w-full bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
+                                        </template>
+                                        <select :name="`indikators[${index}][satuan]`"
+                                                x-model="ind.satuan"
+                                                @change="handleSatuanChange(ind)"
+                                                required
+                                                class="w-full bg-white dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold appearance-none cursor-pointer">
+                                            <template x-for="satuan in satuanOptions" :key="satuan">
+                                                <option :value="satuan" x-text="satuan.charAt(0).toUpperCase() + satuan.slice(1)"></option>
+                                            </template>
+                                        </select>
                                         <button type="button" @click="removeIndikator(index)"
-                                            class="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0">
+                                            class="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0 md:mt-1">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
                                     </div>

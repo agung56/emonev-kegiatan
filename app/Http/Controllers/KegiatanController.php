@@ -305,7 +305,7 @@ class KegiatanController extends Controller
     public function getIndikators(int $sasaranId)
     {
         $indikators = \App\Models\Indikator::where('sasaran_id', $sasaranId)
-            ->select('id', 'nama_indikator')
+            ->select('id', 'nama_indikator', 'target', 'satuan')
             ->get();
         return response()->json($indikators);
     }

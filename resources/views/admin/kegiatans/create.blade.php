@@ -215,7 +215,10 @@
                         <template x-for="ind in indikators" :key="ind.id">
                             <label class="flex items-start gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl cursor-pointer hover:bg-brand-primary/5 transition-all group/ind">
                                 <input type="checkbox" name="indikator_ids[]" :value="ind.id" class="mt-0.5 w-4 h-4 rounded-md accent-brand-primary cursor-pointer shrink-0">
-                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover/ind:text-slate-900 dark:group-hover/ind:text-white leading-snug" x-text="ind.nama_indikator"></span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover/ind:text-slate-900 dark:group-hover/ind:text-white leading-snug" x-text="ind.nama_indikator"></span>
+                                    <span x-show="ind.target_label" class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 uppercase" x-text="`Target: ${ind.target_label}`"></span>
+                                </span>
                             </label>
                         </template>
                     </div>
