@@ -10,6 +10,9 @@ class Indikator extends Model
         'persen',
         'indeks',
         'laporan',
+        'lembaga',
+        'nilai',
+        'layanan',
         'juknis',
         'peraturan',
         'rancangan',
@@ -36,6 +39,7 @@ class Indikator extends Model
         80 => ['code' => 'BB', 'label' => 'BB - Sangat Baik (lebih dari 70 s.d 80)'],
         90 => ['code' => 'A', 'label' => 'A - Memuaskan (lebih dari 80 s.d 90)'],
         100 => ['code' => 'AA', 'label' => 'AA - Sangat Memuaskan (lebih dari 90 s.d 100)'],
+        110 => ['code' => 'WTP', 'label' => 'WTP (Wajar Tanpa Pengecualian)'],
     ];
 
     protected $fillable = [
