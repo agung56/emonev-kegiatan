@@ -315,18 +315,18 @@ class PaguController extends Controller
                     return [
                         'id'            => null,
                         'nama_kegiatan' => $this->resolveNamaKegiatan(trim($item), []),
-                        'ro'            => '',
-                        'komponen_label' => '',
                         'details'       => [],
                     ];
                 }
 
-                $ro = trim((string) ($item['ro'] ?? ''));
-                $komponenLabel = trim((string) ($item['komponen_label'] ?? ''));
-
                 $details = collect([
                     ...($item['details'] ?? []),
-                    ...$this->normalizeSubKomponens($item['sub_komponens'] ?? [], $ro, $komponenLabel),
+                    ...$this->normalizeRoKomponens(
+                        $item['ro_komponens'] ?? [],
+                        trim((string) ($item['ro'] ?? '')),
+                        trim((string) ($item['komponen_label'] ?? '')),
+                        $item['sub_komponens'] ?? [],
+                    ),
                 ])->values()->all();
 
                 $details = $this->normalizeDetails($details);
@@ -337,14 +337,33 @@ class PaguController extends Controller
                         trim((string) ($item['nama_kegiatan'] ?? '')),
                         $details
                     ),
-                    'ro'            => $ro,
-                    'komponen_label' => $komponenLabel,
                     'details'       => $details,
                 ];
             })
             ->filter(fn ($item) => filled($item['nama_kegiatan']) || ! empty($item['details']))
             ->values()
             ->all();
+    }
+
+    private function normalizeRoKomponens(
+        array $roKomponens,
+        string $fallbackRo = '',
+        string $fallbackKomponenLabel = '',
+        array $legacySubKomponens = []
+    ): array {
+        if (! empty($roKomponens)) {
+            return collect($roKomponens)
+                ->flatMap(function ($item) {
+                    $ro = trim((string) ($item['ro'] ?? ''));
+                    $komponenLabel = trim((string) ($item['komponen_label'] ?? ''));
+
+                    return $this->normalizeSubKomponens($item['sub_komponens'] ?? [], $ro, $komponenLabel);
+                })
+                ->values()
+                ->all();
+        }
+
+        return $this->normalizeSubKomponens($legacySubKomponens, $fallbackRo, $fallbackKomponenLabel);
     }
 
     private function normalizeDetails(array $details): array

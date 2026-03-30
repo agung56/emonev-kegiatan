@@ -41,13 +41,19 @@
         };
     },
 
+    emptyRoKomponen() {
+        return {
+            ro: '',
+            komponen_label: '',
+            sub_komponens: [this.emptySubKomponen()],
+        };
+    },
+
     emptyKomponen() {
         return {
             id: null,
             nama_kegiatan: '',
-            ro: '',
-            komponen_label: '',
-            sub_komponens: [this.emptySubKomponen()],
+            ro_komponens: [this.emptyRoKomponen()],
         };
     },
 
@@ -68,9 +74,9 @@
         }).format(value);
     },
 
-    handleNominalInput(komponenIndex, subKomponenIndex, detailIndex, val) {
+    handleNominalInput(komponenIndex, roKomponenIndex, subKomponenIndex, detailIndex, val) {
         let numeric = val.replace(/[^0-9]/g, '');
-        this.currentData.komponens[komponenIndex].sub_komponens[subKomponenIndex].details[detailIndex].nominal = numeric ? parseInt(numeric) : 0;
+        this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens[subKomponenIndex].details[detailIndex].nominal = numeric ? parseInt(numeric) : 0;
         this.calculateTotal();
     },
 
@@ -105,17 +111,13 @@
                     : ((komponen?.nama_komponen && String(komponen.nama_komponen).trim())
                         ? komponen.nama_komponen
                         : ((Array.isArray(komponen?.details) && komponen.details.length) ? 'Kegiatan Utama' : '')),
-                ro: (komponen?.ro && String(komponen.ro).trim())
-                    ? komponen.ro
-                    : ((komponen?.sub_komponens?.[0]?.ro && String(komponen.sub_komponens[0].ro).trim())
-                        ? komponen.sub_komponens[0].ro
-                        : (komponen?.details?.[0]?.ro ?? '')),
-                komponen_label: (komponen?.komponen_label && String(komponen.komponen_label).trim())
-                    ? komponen.komponen_label
-                    : ((komponen?.sub_komponens?.[0]?.komponen_label && String(komponen.sub_komponens[0].komponen_label).trim())
-                        ? komponen.sub_komponens[0].komponen_label
-                        : (komponen?.details?.[0]?.komponen_label ?? '')),
-                sub_komponens: this.normalizeSubKomponens(komponen?.sub_komponens ?? [], komponen?.details ?? []),
+                ro_komponens: this.normalizeRoKomponens(
+                    komponen?.ro_komponens ?? [],
+                    komponen?.sub_komponens ?? [],
+                    komponen?.details ?? [],
+                    komponen?.ro ?? '',
+                    komponen?.komponen_label ?? '',
+                ),
             }))
             : [];
 
@@ -125,18 +127,66 @@
                 if (!normalized.length) {
                     normalized.push(this.emptyKomponen());
                     normalized[0].nama_kegiatan = 'Kegiatan Utama';
-                    normalized[0].ro = orphans[0]?.ro ?? '';
-                    normalized[0].komponen_label = orphans[0]?.komponen_label ?? '';
                 }
 
-                normalized[0].sub_komponens = [
-                    ...normalized[0].sub_komponens.filter((item) => item.sub_komponen || item.details.some((detail) => detail.detail || detail.nominal)),
-                    ...this.normalizeSubKomponens([], orphans),
+                normalized[0].ro_komponens = [
+                    ...normalized[0].ro_komponens.filter((item) => item.ro || item.komponen_label || item.sub_komponens.some((sub) => sub.sub_komponen || sub.details.some((detail) => detail.detail || detail.nominal))),
+                    ...this.normalizeRoKomponens([], [], orphans),
                 ];
             }
         }
 
         return normalized.length ? normalized : [this.emptyKomponen()];
+    },
+
+    normalizeRoKomponens(roKomponens = [], legacySubKomponens = [], legacyDetails = [], fallbackRo = '', fallbackKomponenLabel = '') {
+        if (Array.isArray(roKomponens) && roKomponens.length) {
+            const normalized = roKomponens.map((item) => ({
+                ro: item?.ro ?? '',
+                komponen_label: item?.komponen_label ?? '',
+                sub_komponens: this.normalizeSubKomponens(item?.sub_komponens ?? [], item?.details ?? []),
+            }));
+
+            return normalized.length ? normalized : [this.emptyRoKomponen()];
+        }
+
+        if (Array.isArray(legacySubKomponens) && legacySubKomponens.length) {
+            return [{
+                ro: fallbackRo ?? '',
+                komponen_label: fallbackKomponenLabel ?? '',
+                sub_komponens: this.normalizeSubKomponens(legacySubKomponens, legacyDetails),
+            }];
+        }
+
+        if (Array.isArray(legacyDetails) && legacyDetails.length) {
+            const groups = [];
+
+            legacyDetails.forEach((detail) => {
+                const ro = detail?.ro ?? '';
+                const komponenLabel = detail?.komponen_label ?? '';
+                const key = `${ro}__${komponenLabel}`;
+
+                let group = groups.find((item) => item.key === key);
+                if (!group) {
+                    group = {
+                        key,
+                        ro,
+                        komponen_label: komponenLabel,
+                        details: [],
+                    };
+                    groups.push(group);
+                }
+
+                group.details.push(detail);
+            });
+
+            return groups.map(({ key, details, ...group }) => ({
+                ...group,
+                sub_komponens: this.normalizeSubKomponens([], details),
+            }));
+        }
+
+        return [this.emptyRoKomponen()];
     },
 
     normalizeSubKomponens(subKomponens = [], legacyDetails = []) {
@@ -197,33 +247,46 @@
         }
     },
 
-    addSubKomponen(komponenIndex) {
-        this.currentData.komponens[komponenIndex].sub_komponens.push(this.emptySubKomponen());
+    addRoKomponen(komponenIndex) {
+        this.currentData.komponens[komponenIndex].ro_komponens.push(this.emptyRoKomponen());
     },
 
-    removeSubKomponen(komponenIndex, subKomponenIndex) {
-        if (this.currentData.komponens[komponenIndex].sub_komponens.length > 1) {
-            this.currentData.komponens[komponenIndex].sub_komponens.splice(subKomponenIndex, 1);
+    removeRoKomponen(komponenIndex, roKomponenIndex) {
+        if (this.currentData.komponens[komponenIndex].ro_komponens.length > 1) {
+            this.currentData.komponens[komponenIndex].ro_komponens.splice(roKomponenIndex, 1);
             this.calculateTotal();
         }
     },
 
-    addDetail(komponenIndex, subKomponenIndex) {
-        this.currentData.komponens[komponenIndex].sub_komponens[subKomponenIndex].details.push(this.emptyDetail());
+    addSubKomponen(komponenIndex, roKomponenIndex) {
+        this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens.push(this.emptySubKomponen());
     },
 
-    removeDetail(komponenIndex, subKomponenIndex, detailIndex) {
-        if (this.currentData.komponens[komponenIndex].sub_komponens[subKomponenIndex].details.length > 1) {
-            this.currentData.komponens[komponenIndex].sub_komponens[subKomponenIndex].details.splice(detailIndex, 1);
+    removeSubKomponen(komponenIndex, roKomponenIndex, subKomponenIndex) {
+        if (this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens.length > 1) {
+            this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens.splice(subKomponenIndex, 1);
+            this.calculateTotal();
+        }
+    },
+
+    addDetail(komponenIndex, roKomponenIndex, subKomponenIndex) {
+        this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens[subKomponenIndex].details.push(this.emptyDetail());
+    },
+
+    removeDetail(komponenIndex, roKomponenIndex, subKomponenIndex, detailIndex) {
+        if (this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens[subKomponenIndex].details.length > 1) {
+            this.currentData.komponens[komponenIndex].ro_komponens[roKomponenIndex].sub_komponens[subKomponenIndex].details.splice(detailIndex, 1);
             this.calculateTotal();
         }
     },
 
     calculateTotal() {
         this.currentData.total_nominal = this.currentData.komponens.reduce((sum, komponen) => {
-            return sum + (komponen.sub_komponens || []).reduce((subSum, subKomponen) => {
-                return subSum + (subKomponen.details || []).reduce((detailSum, item) => {
-                    return detailSum + (parseInt(item.nominal) || 0);
+            return sum + (komponen.ro_komponens || []).reduce((roSum, roKomponen) => {
+                return roSum + (roKomponen.sub_komponens || []).reduce((subSum, subKomponen) => {
+                    return subSum + (subKomponen.details || []).reduce((detailSum, item) => {
+                        return detailSum + (parseInt(item.nominal) || 0);
+                    }, 0);
                 }, 0);
             }, 0);
         }, 0);
@@ -623,56 +686,71 @@
                                 <template x-for="(komponen, index) in currentData.komponens" :key="`komponen-${index}`">
                                     <div class="space-y-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
                                         <input type="hidden" :name="`komponen_anggaran[${index}][id]`" :value="komponen.id || ''">
-                                        <div class="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 items-start">
+                                        <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
                                             <input type="text" :name="`komponen_anggaran[${index}][nama_kegiatan]`" x-model="komponen.nama_kegiatan" placeholder="Contoh: Pelatihan Keuangan Daerah" class="w-full bg-white dark:bg-slate-800 border-none px-4 py-3 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold placeholder:font-medium placeholder:text-slate-400">
-                                            <input type="text" :name="`komponen_anggaran[${index}][ro]`" x-model="komponen.ro" placeholder="RO..." required class="w-full bg-white dark:bg-slate-800 border-none px-4 py-3 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold placeholder:font-medium placeholder:text-slate-400">
-                                            <input type="text" :name="`komponen_anggaran[${index}][komponen_label]`" x-model="komponen.komponen_label" placeholder="Komponen..." required class="w-full bg-white dark:bg-slate-800 border-none px-4 py-3 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold placeholder:font-medium placeholder:text-slate-400">
                                             <button type="button" @click="removeKomponen(index)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </div>
                                         <div class="space-y-3">
                                             <div class="flex items-center justify-between px-1">
-                                                <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Rincian Hierarki Anggaran</h5>
-                                                <button type="button" @click="addSubKomponen(index)" class="flex items-center gap-1 text-[10px] font-black text-brand-primary uppercase hover:opacity-70 transition-opacity">
+                                                <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">RO dan Komponen</h5>
+                                                <button type="button" @click="addRoKomponen(index)" class="flex items-center gap-1 text-[10px] font-black text-brand-primary uppercase hover:opacity-70 transition-opacity">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                                                    Tambah Sub Komponen
+                                                    Tambah RO/Komponen
                                                 </button>
                                             </div>
-                                            <template x-for="(subKomponen, subIndex) in komponen.sub_komponens" :key="`sub-${index}-${subIndex}`">
+                                            <template x-for="(roKomponen, roIndex) in komponen.ro_komponens" :key="`ro-${index}-${roIndex}`">
                                                 <div class="space-y-4 p-4 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-brand-primary/50 transition-all">
-                                                    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3">
-                                                        <div class="flex gap-3">
-                                                            <input type="text" :name="`komponen_anggaran[${index}][sub_komponens][${subIndex}][sub_komponen]`" x-model="subKomponen.sub_komponen" placeholder="Sub komponen..." required 
-                                                                class="w-full bg-slate-50 dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
-                                                            <button type="button" @click="removeSubKomponen(index, subIndex)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
-                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                            </button>
-                                                        </div>
+                                                    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 items-start">
+                                                        <input type="text" :name="`komponen_anggaran[${index}][ro_komponens][${roIndex}][ro]`" x-model="roKomponen.ro" placeholder="RO..." required class="w-full bg-slate-50 dark:bg-slate-800 border-none px-4 py-3 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold placeholder:font-medium placeholder:text-slate-400">
+                                                        <input type="text" :name="`komponen_anggaran[${index}][ro_komponens][${roIndex}][komponen_label]`" x-model="roKomponen.komponen_label" placeholder="Komponen..." required class="w-full bg-slate-50 dark:bg-slate-800 border-none px-4 py-3 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold placeholder:font-medium placeholder:text-slate-400">
+                                                        <button type="button" @click="removeRoKomponen(index, roIndex)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                        </button>
                                                     </div>
                                                     <div class="space-y-3">
                                                         <div class="flex items-center justify-between px-1">
-                                                            <h6 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Detail Anggaran</h6>
-                                                            <button type="button" @click="addDetail(index, subIndex)" class="flex items-center gap-1 text-[10px] font-black text-brand-primary uppercase hover:opacity-70 transition-opacity">
+                                                            <h6 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sub Komponen</h6>
+                                                            <button type="button" @click="addSubKomponen(index, roIndex)" class="flex items-center gap-1 text-[10px] font-black text-brand-primary uppercase hover:opacity-70 transition-opacity">
                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                                                                Tambah Detail
+                                                                Tambah Sub Komponen
                                                             </button>
                                                         </div>
-                                                        <template x-for="(detail, detailIndex) in subKomponen.details" :key="`detail-${index}-${subIndex}-${detailIndex}`">
-                                                            <div class="flex flex-col md:flex-row gap-3 items-start">
-                                                                <input type="hidden" :name="`komponen_anggaran[${index}][sub_komponens][${subIndex}][details][${detailIndex}][id]`" :value="detail.id || ''">
-                                                                <div class="flex-1 w-full">
-                                                                    <input type="text" :name="`komponen_anggaran[${index}][sub_komponens][${subIndex}][details][${detailIndex}][detail]`" x-model="detail.detail" placeholder="Detail anggaran..." required 
-                                                                        class="w-full bg-slate-50 dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
+                                                        <template x-for="(subKomponen, subIndex) in roKomponen.sub_komponens" :key="`sub-${index}-${roIndex}-${subIndex}`">
+                                                            <div class="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-white/5">
+                                                                <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3">
+                                                                    <div class="flex gap-3">
+                                                                        <input type="text" :name="`komponen_anggaran[${index}][ro_komponens][${roIndex}][sub_komponens][${subIndex}][sub_komponen]`" x-model="subKomponen.sub_komponen" placeholder="Sub komponen..." required class="w-full bg-white dark:bg-slate-900 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
+                                                                        <button type="button" @click="removeSubKomponen(index, roIndex, subIndex)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
+                                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                                <div class="w-full md:w-48">
-                                                                    <input type="text" :value="formatRupiah(detail.nominal)" @input="handleNominalInput(index, subIndex, detailIndex, $event.target.value)" placeholder="Rp 0" 
-                                                                        class="w-full bg-slate-50 dark:bg-slate-800 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-black text-right text-brand-primary">
-                                                                    <input type="hidden" :name="`komponen_anggaran[${index}][sub_komponens][${subIndex}][details][${detailIndex}][nominal]`" :value="detail.nominal">
+                                                                <div class="space-y-3">
+                                                                    <div class="flex items-center justify-between px-1">
+                                                                        <h6 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Detail Anggaran</h6>
+                                                                        <button type="button" @click="addDetail(index, roIndex, subIndex)" class="flex items-center gap-1 text-[10px] font-black text-brand-primary uppercase hover:opacity-70 transition-opacity">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                                                                            Tambah Detail
+                                                                        </button>
+                                                                    </div>
+                                                                    <template x-for="(detail, detailIndex) in subKomponen.details" :key="`detail-${index}-${roIndex}-${subIndex}-${detailIndex}`">
+                                                                        <div class="flex flex-col md:flex-row gap-3 items-start">
+                                                                            <input type="hidden" :name="`komponen_anggaran[${index}][ro_komponens][${roIndex}][sub_komponens][${subIndex}][details][${detailIndex}][id]`" :value="detail.id || ''">
+                                                                            <div class="flex-1 w-full">
+                                                                                <input type="text" :name="`komponen_anggaran[${index}][ro_komponens][${roIndex}][sub_komponens][${subIndex}][details][${detailIndex}][detail]`" x-model="detail.detail" placeholder="Detail anggaran..." required class="w-full bg-white dark:bg-slate-900 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-bold">
+                                                                            </div>
+                                                                            <div class="w-full md:w-48">
+                                                                                <input type="text" :value="formatRupiah(detail.nominal)" @input="handleNominalInput(index, roIndex, subIndex, detailIndex, $event.target.value)" placeholder="Rp 0" class="w-full bg-white dark:bg-slate-900 border-none px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm font-black text-right text-brand-primary">
+                                                                                <input type="hidden" :name="`komponen_anggaran[${index}][ro_komponens][${roIndex}][sub_komponens][${subIndex}][details][${detailIndex}][nominal]`" :value="detail.nominal">
+                                                                            </div>
+                                                                            <button type="button" @click="removeDetail(index, roIndex, subIndex, detailIndex)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
+                                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                                            </button>
+                                                                        </div>
+                                                                    </template>
                                                                 </div>
-                                                                <button type="button" @click="removeDetail(index, subIndex, detailIndex)" class="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
-                                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                                </button>
                                                             </div>
                                                         </template>
                                                     </div>
