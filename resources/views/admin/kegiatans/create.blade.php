@@ -38,7 +38,8 @@
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <div class="space-y-1.5">
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Tahun Anggaran <span class="text-red-500">*</span></label>
-                    <input type="number" name="tahun_anggaran" value="{{ old('tahun_anggaran', date('Y')) }}" min="2000" max="2099" required class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
+                    <input type="number" name="tahun_anggaran" x-model="tahunAnggaran" readonly min="2000" max="2099" required class="w-full px-5 py-3.5 bg-slate-100 dark:bg-slate-800/70 border-2 border-transparent rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all cursor-not-allowed">
+                    <p class="text-[10px] text-slate-400 ml-1">Terisi otomatis mengikuti tahun pada tanggal mulai.</p>
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Kepemilikan <span class="text-red-500">*</span></label>
@@ -75,7 +76,7 @@
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Tanggal Mulai <span class="text-red-500">*</span></label>
-                    <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" required class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
+                    <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" @input="syncTahunAnggaran($event.target.value)" required class="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none transition-all">
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Tanggal Selesai <span class="text-red-500">*</span></label>
@@ -369,6 +370,7 @@
 <script>
 function kegiatanForm() {
     return {
+        tahunAnggaran: '{{ old('tanggal_mulai') ? \Carbon\Carbon::parse(old('tanggal_mulai'))->format('Y') : old('tahun_anggaran', date('Y')) }}',
         paguDetails: [],
         indikators: [],
         anggaranRows: [],
@@ -424,6 +426,11 @@ function kegiatanForm() {
 
             const hierarchy = segments.join(' • ');
             return `${hierarchy} — Rp ${Number(detail.nominal || 0).toLocaleString('id-ID')}`;
+        },
+
+        syncTahunAnggaran(dateValue) {
+            const year = (dateValue || '').split('-')[0];
+            if (year) this.tahunAnggaran = year;
         },
 
         handleNominalInput(index, val) {

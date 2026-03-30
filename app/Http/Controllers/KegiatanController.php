@@ -8,6 +8,7 @@ use App\Models\KegiatanDokumen;
 use App\Models\Pagu;
 use App\Models\Sasaran;
 use App\Models\SubBagian;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -72,11 +73,12 @@ class KegiatanController extends Controller
             }
         });
         $validated = $validator->validate();
+        $tahunAnggaran = (int) Carbon::parse($validated['tanggal_mulai'])->format('Y');
 
         DB::beginTransaction();
         try {
             $kegiatan = Kegiatan::create([
-                'tahun_anggaran'   => $validated['tahun_anggaran'],
+                'tahun_anggaran'   => $tahunAnggaran,
                 'kepemilikan'      => $validated['kepemilikan'],
                 'pagu_id'          => $validated['pagu_id'] ?? null,
                 'sasaran_id'       => $validated['sasaran_id'],
@@ -205,11 +207,12 @@ class KegiatanController extends Controller
             }
         });
         $validated = $validator->validate();
+        $tahunAnggaran = (int) Carbon::parse($validated['tanggal_mulai'])->format('Y');
 
         DB::beginTransaction();
         try {
             $kegiatan->update([
-                'tahun_anggaran'   => $validated['tahun_anggaran'],
+                'tahun_anggaran'   => $tahunAnggaran,
                 'kepemilikan'      => $validated['kepemilikan'],
                 'pagu_id'          => $validated['pagu_id'] ?? null,
                 'sasaran_id'       => $validated['sasaran_id'],

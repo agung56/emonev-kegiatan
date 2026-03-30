@@ -92,7 +92,12 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
             <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                 <div>
                     <h2 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Penyerapan Anggaran</h2>
-                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Per kegiatan - TA {{ $tahun }}</p>
+                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">
+                        Per kegiatan - Realisasi TA {{ $tahun }}
+                        @if(isset($tahunPaguReferensi) && $tahunPaguReferensi && (int) $tahunPaguReferensi !== (int) $tahun)
+                        | Sumber pagu TA {{ $tahunPaguReferensi }}
+                        @endif
+                    </p>
                 </div>
                 <span class="px-2.5 py-1 bg-brand-primary/10 text-brand-primary rounded-full text-[10px] font-black">
                     {{ number_format($pctPenyerapan, 1) }}% Total
