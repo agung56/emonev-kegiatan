@@ -87,22 +87,33 @@ class DashboardController extends Controller
             ->groupBy('pd.pagu_id')
             ->pluck('total_realisasi', 'pd.pagu_id');
 
-        $penyerapanPerPagu = Pagu::where('tahun_anggaran', $tahun)
+        $penyerapanPerKegiatan = Kegiatan::with(['pagu', 'anggarans.paguDetail'])
+            ->where('tahun_anggaran', $tahun)
             ->get()
-            ->map(function ($p) use ($realisasiByPaguId) {
-                $realisasi = (float) ($realisasiByPaguId[$p->id] ?? 0);
-                $sisa      = $p->total_nominal - $realisasi;
-                $pct       = $p->total_nominal > 0
-                    ? round(($realisasi / $p->total_nominal) * 100, 1)
+            ->map(function ($kegiatan) {
+                $realisasi = (float) $kegiatan->anggarans->sum('nominal_digunakan');
+
+                $paguKegiatan = $kegiatan->anggarans
+                    ->filter(fn ($anggaran) => $anggaran->paguDetail)
+                    ->unique('pagu_detail_id')
+                    ->sum(fn ($anggaran) => (float) ($anggaran->paguDetail->nominal ?? 0));
+
+                $sisa = $paguKegiatan - $realisasi;
+                $pct  = $paguKegiatan > 0
+                    ? round(($realisasi / $paguKegiatan) * 100, 1)
                     : 0;
+
                 return [
-                    'program'   => $p->program_label,
-                    'pagu'      => $p->total_nominal,
+                    'kegiatan'  => $kegiatan->nama_kegiatan,
+                    'program'   => $kegiatan->pagu?->program_label,
+                    'pagu'      => $paguKegiatan,
                     'realisasi' => $realisasi,
                     'sisa'      => $sisa,
                     'pct'       => $pct,
                 ];
-            });
+            })
+            ->sortByDesc('realisasi')
+            ->values();
 
         // ── STATISTIK KEGIATAN ────────────────────────────────────────────
         $totalKegiatan      = Kegiatan::where('tahun_anggaran', $tahun)->count();
@@ -143,7 +154,7 @@ class DashboardController extends Controller
         return view('admin.index', compact(
             'user', 'tahun', 'tahunList', 'today',
             'paguTahunIni', 'realisasiTahunIni', 'sisaAnggaran', 'pctPenyerapan',
-            'penyerapanPerBulan', 'penyerapanPerTriwulan', 'penyerapanPerPagu',
+            'penyerapanPerBulan', 'penyerapanPerTriwulan', 'penyerapanPerKegiatan',
             'totalKegiatan', 'kegiatanBulanIni',
             'kegiatanTerbaru',
             'totalSasaran',

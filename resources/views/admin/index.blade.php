@@ -92,7 +92,7 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
             <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                 <div>
                     <h2 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Penyerapan Anggaran</h2>
-                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Per sumber pagu · TA {{ $tahun }}</p>
+                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Per kegiatan - TA {{ $tahun }}</p>
                 </div>
                 <span class="px-2.5 py-1 bg-brand-primary/10 text-brand-primary rounded-full text-[10px] font-black">
                     {{ number_format($pctPenyerapan, 1) }}% Total
@@ -115,13 +115,16 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                 </div>
             </div>
 
-            {{-- Per program --}}
+            {{-- Per kegiatan --}}
             <div class="divide-y divide-slate-50 dark:divide-white/5">
-                @forelse($penyerapanPerPagu as $pg)
+                @forelse($penyerapanPerKegiatan as $pg)
                 <div class="px-6 py-4">
                     <div class="flex items-start justify-between gap-4 mb-2">
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ $pg['program'] }}</p>
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ $pg['kegiatan'] }}</p>
+                            @if($pg['program'])
+                            <p class="text-[10px] text-brand-primary font-bold uppercase tracking-wide mt-0.5 truncate">{{ $pg['program'] }}</p>
+                            @endif
                             <div class="flex items-center gap-3 mt-0.5">
                                 <span class="text-[10px] text-slate-400 font-medium">Pagu: Rp {{ number_format($pg['pagu'], 0, ',', '.') }}</span>
                                 <span class="text-[10px] text-slate-400">·</span>
@@ -142,7 +145,7 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                     </div>
                 </div>
                 @empty
-                <div class="px-6 py-10 text-center text-sm text-slate-400 italic">Belum ada data pagu.</div>
+                <div class="px-6 py-10 text-center text-sm text-slate-400 italic">Belum ada data kegiatan.</div>
                 @endforelse
             </div>
         </div>
@@ -175,15 +178,15 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                     <div class="space-y-1.5 flex-1 min-w-0">
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Realisasi</p>
-                            <p class="text-sm font-black text-brand-primary truncate">Rp {{ number_format($realisasiTahunIni/1000000, 1, ',', '.') }}Jt</p>
+                            <p class="text-sm font-black text-brand-primary truncate">Rp {{ number_format($realisasiTahunIni, 0, ',', '.') }}</p>
                         </div>
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pagu</p>
-                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($paguTahunIni/1000000, 1, ',', '.') }}Jt</p>
+                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($paguTahunIni, 0, ',', '.') }}</p>
                         </div>
                         <div>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sisa</p>
-                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($sisaAnggaran/1000000, 1, ',', '.') }}Jt</p>
+                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">Rp {{ number_format($sisaAnggaran, 0, ',', '.') }}</p>
                         </div>
                     </div>
                 </div>
@@ -360,9 +363,7 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                     </div>
                     <div class="text-right shrink-0">
                         <span class="text-xs font-black text-slate-700 dark:text-white">
-                            Rp {{ $sb->total_realisasi >= 1000000
-                                ? number_format($sb->total_realisasi / 1000000, 1, ',', '.') . 'Jt'
-                                : number_format($sb->total_realisasi, 0, ',', '.') }}
+                            Rp {{ number_format($sb->total_realisasi, 0, ',', '.') }}
                         </span>
                     </div>
                 </div>
