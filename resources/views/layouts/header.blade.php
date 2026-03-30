@@ -42,6 +42,11 @@
                 <div class="px-4 py-2 border-b border-slate-100 dark:border-white/5 sm:hidden">
                     <p class="text-[10px] font-black text-slate-800 dark:text-white uppercase truncate">{{ auth()->user()->name }}</p>
                 </div>
+                <a href="{{ route('password.edit') }}"
+                   class="w-full flex items-center px-4 py-3 text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-all gap-3">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    GANTI PASSWORD
+                </a>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="w-full flex items-center px-4 py-3 text-[10px] md:text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all gap-3">

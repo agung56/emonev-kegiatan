@@ -165,17 +165,17 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                 $kegiatans = $indikator->kegiatans;
                 if ($kegiatans->isEmpty()) continue;
 
-                // Hitung ringkasan anggaran per akun untuk indikator ini
+                // Hitung ringkasan anggaran per detail untuk indikator ini
                 $anggaranPerAkun = collect();
                 foreach ($kegiatans as $kg) {
                     foreach ($kg->anggarans as $ang) {
-                        $key = $ang->paguDetail->nama_akun ?? 'Lainnya';
+                        $key = $ang->paguDetail->detail_label ?? 'Lainnya';
                         $paguNominal = $ang->paguDetail->nominal ?? 0;
                         if ($anggaranPerAkun->has($key)) {
                             $anggaranPerAkun[$key]['realisasi'] += $ang->nominal_digunakan;
                         } else {
                             $anggaranPerAkun[$key] = [
-                                'nama_akun'  => $key,
+                                'nama_detail' => $key,
                                 'pagu'       => $paguNominal,
                                 'realisasi'  => $ang->nominal_digunakan,
                             ];
@@ -207,13 +207,13 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                     </div>
                 </div>
 
-                {{-- Tabel Ringkasan Anggaran per Akun --}}
+                {{-- Tabel Ringkasan Anggaran per Detail --}}
                 @if($anggaranPerAkun->isNotEmpty())
                 <div class="overflow-x-auto border-b border-slate-100 dark:border-white/5">
                     <table class="w-full text-left">
                         <thead>
                             <tr class="bg-slate-50/50 dark:bg-white/[0.02]">
-                                <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Ringkasan Anggaran (Budget Allocation)</th>
+                                <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Ringkasan Detail Anggaran</th>
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Pagu</th>
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Realisasi</th>
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Sisa</th>
@@ -227,7 +227,7 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                                 $pct  = $akun['pagu'] > 0 ? round(($akun['realisasi'] / $akun['pagu']) * 100, 2) : 0;
                             @endphp
                             <tr class="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                                <td class="px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $akun['nama_akun'] }}</td>
+                                <td class="px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $akun['nama_detail'] }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-500 text-right">Rp {{ number_format($akun['pagu'],0,',','.') }}</td>
                                 <td class="px-6 py-3 text-sm font-bold text-brand-primary text-right">Rp {{ number_format($akun['realisasi'],0,',','.') }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-500 text-right">Rp {{ number_format($sisa,0,',','.') }}</td>
@@ -249,9 +249,9 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                         <thead>
                             <tr class="bg-slate-50/50 dark:bg-white/[0.02]">
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Kegiatan</th>
-                                <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Nama Pagu</th>
+                                <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Program</th>
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Lokus</th>
-                                <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Akun Anggaran</th>
+                                <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Detail Anggaran</th>
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
                                 <th class="px-6 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Realisasi</th>
                             </tr>
@@ -265,14 +265,14 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                                     <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider mt-1 inline-block {{ $kg->kepemilikan === 'lembaga' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600' }}">{{ $kg->kepemilikan }}</span>
                                 </td>
                                 <td class="px-6 py-3">
-                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">{{ $kg->pagu?->kegiatan ?? '—' }}</p>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">{{ $kg->pagu?->program_label ?? '—' }}</p>
                                     <p class="text-[10px] text-brand-primary font-black mt-0.5">TA {{ $kg->pagu?->tahun_anggaran ?? '' }}</p>
                                 </td>
                                 <td class="px-6 py-3 text-sm text-slate-500 font-medium">{{ $kg->lokus ?? '—' }}</td>
                                 <td class="px-6 py-3">
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($kg->anggarans as $ang)
-                                        <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 rounded text-[10px] font-bold">{{ $ang->paguDetail->nama_akun ?? '-' }}</span>
+                                        <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 rounded text-[10px] font-bold">{{ $ang->paguDetail->detail_label ?? '-' }}</span>
                                         @endforeach
                                     </div>
                                 </td>
@@ -347,12 +347,12 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                 $anggaranPerAkun = collect();
                 foreach ($kegiatans as $kg) {
                     foreach ($kg->anggarans as $ang) {
-                        $key = $ang->paguDetail->nama_akun ?? 'Lainnya';
+                        $key = $ang->paguDetail->detail_label ?? 'Lainnya';
                         $paguNominal = $ang->paguDetail->nominal ?? 0;
                         if ($anggaranPerAkun->has($key)) {
                             $anggaranPerAkun[$key]['realisasi'] += $ang->nominal_digunakan;
                         } else {
-                            $anggaranPerAkun[$key] = ['nama_akun' => $key, 'pagu' => $paguNominal, 'realisasi' => $ang->nominal_digunakan];
+                            $anggaranPerAkun[$key] = ['nama_detail' => $key, 'pagu' => $paguNominal, 'realisasi' => $ang->nominal_digunakan];
                         }
                     }
                 }
@@ -389,7 +389,7 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                             $pct  = $akun['pagu'] > 0 ? round(($akun['realisasi'] / $akun['pagu']) * 100, 2) : 0;
                         @endphp
                         <tr>
-                            <td>{{ $akun['nama_akun'] }}</td>
+                            <td>{{ $akun['nama_detail'] }}</td>
                             <td class="text-right">Rp {{ number_format($akun['pagu'],0,',','.') }}</td>
                             <td class="text-right font-bold">Rp {{ number_format($akun['realisasi'],0,',','.') }}</td>
                             <td class="text-right">Rp {{ number_format($sisa,0,',','.') }}</td>
@@ -407,7 +407,7 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                             <th class="text-left" style="width:22%">Kegiatan</th>
                             <th class="text-left" style="width:18%">Nama Pagu</th>
                             <th class="text-left" style="width:12%">Lokus</th>
-                            <th class="text-left" style="width:18%">Akun Anggaran</th>
+                            <th class="text-left" style="width:18%">Detail Anggaran</th>
                             <th class="text-left" style="width:15%">Tanggal</th>
                             <th class="text-right" style="width:15%">Realisasi</th>
                         </tr>
@@ -417,9 +417,9 @@ $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agust
                         @php $totalKg = $kg->anggarans->sum('nominal_digunakan'); @endphp
                         <tr>
                             <td>{{ $kg->nama_kegiatan }}</td>
-                            <td>{{ $kg->pagu?->kegiatan ?? '—' }} <span style="color:#666;font-size:8pt">(TA {{ $kg->pagu?->tahun_anggaran ?? '' }})</span></td>
+                            <td>{{ $kg->pagu?->program_label ?? '—' }} <span style="color:#666;font-size:8pt">(TA {{ $kg->pagu?->tahun_anggaran ?? '' }})</span></td>
                             <td>{{ $kg->lokus ?? '—' }}</td>
-                            <td>{{ $kg->anggarans->map(fn($a) => $a->paguDetail->nama_akun ?? '-')->join(', ') }}</td>
+                            <td>{{ $kg->anggarans->map(fn($a) => $a->paguDetail->detail_label ?? '-')->join(', ') }}</td>
                             <td>{{ $kg->tanggal_mulai->format('d M') }} – {{ $kg->tanggal_selesai->format('d M Y') }}</td>
                             <td class="text-right font-bold">Rp {{ number_format($totalKg,0,',','.') }}</td>
                         </tr>

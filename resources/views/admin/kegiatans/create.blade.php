@@ -90,7 +90,7 @@
                 <div class="w-8 h-8 rounded-xl bg-brand-primary/10 flex items-center justify-center"><span class="text-brand-primary font-black text-sm">2</span></div>
                 <div>
                     <h2 class="text-sm font-black text-slate-700 dark:text-white uppercase tracking-widest">Pagu & Penggunaan Anggaran</h2>
-                    <p class="text-[10px] text-slate-400 font-medium">Pilih pagu lalu isi penggunaan per akun</p>
+                    <p class="text-[10px] text-slate-400 font-medium">Pilih program pagu lalu isi penggunaan per detail anggaran</p>
                 </div>
             </div>
             <div class="p-6 space-y-5">
@@ -100,7 +100,7 @@
                         <select name="pagu_id" @change="loadPaguDetails($event.target.value)" class="appearance-none w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-2xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-10">
                             <option value="">— Pilih Pagu Anggaran —</option>
                             @foreach($pagus as $pagu)
-                            <option value="{{ $pagu->id }}" {{ old('pagu_id')==$pagu->id?'selected':'' }}>{{ $pagu->kegiatan }} ({{ $pagu->tahun_anggaran }}) — Rp {{ number_format($pagu->total_nominal,0,',','.') }}</option>
+                            <option value="{{ $pagu->id }}" {{ old('pagu_id')==$pagu->id?'selected':'' }}>{{ $pagu->program_label }} ({{ $pagu->tahun_anggaran }}) — Rp {{ number_format($pagu->total_nominal,0,',','.') }}</option>
                             @endforeach
                         </select>
                         <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
@@ -126,16 +126,16 @@
                 </div>
 
                 <div x-show="anggaranRows.length > 0" class="space-y-3" x-transition>
-                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Penggunaan Per Akun</label>
+                    <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Penggunaan Per Detail</label>
                     <template x-for="(row, index) in anggaranRows" :key="index">
                         <div class="group flex flex-col md:flex-row items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-brand-primary/30 transition-all">
                             <div class="flex-1 w-full">
                                 <div class="relative">
                                     <select :name="`anggaran[${index}][pagu_detail_id]`" x-model="row.pagu_detail_id"
                                             class="appearance-none w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-transparent focus:border-brand-primary rounded-xl text-sm text-slate-800 dark:text-white font-bold outline-none cursor-pointer transition-all pr-8">
-                                        <option value="">— Pilih Akun —</option>
+                                        <option value="">— Pilih Detail Anggaran —</option>
                                         <template x-for="d in paguDetails" :key="d.id">
-                                            <option :value="d.id" x-text="`${d.nama_komponen ? `${d.nama_komponen} • ` : ''}${d.nama_akun} — Rp ${Number(d.nominal).toLocaleString('id-ID')}`"></option>
+                                            <option :value="d.id" x-text="buildPaguDetailLabel(d)"></option>
                                         </template>
                                     </select>
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M19 9l-7 7-7-7"></path></svg></div>
@@ -182,7 +182,7 @@
                 <button type="button" @click="addAnggaranRow()" x-show="paguDetails.length > 0"
                         class="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-brand-primary/30 hover:border-brand-primary text-brand-primary rounded-2xl text-xs font-black uppercase tracking-widest transition-all hover:bg-brand-primary/5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                    Tambah Akun Anggaran
+                    Tambah Detail Anggaran
                 </button>
             </div>
         </div>
@@ -413,6 +413,19 @@ function kegiatanForm() {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
         },
 
+        buildPaguDetailLabel(detail) {
+            const segments = [
+                detail.nama_kegiatan,
+                detail.ro,
+                detail.nama_komponen,
+                detail.sub_komponen,
+                detail.nama_akun,
+            ].filter(Boolean);
+
+            const hierarchy = segments.join(' • ');
+            return `${hierarchy} — Rp ${Number(detail.nominal || 0).toLocaleString('id-ID')}`;
+        },
+
         handleNominalInput(index, val) {
             const n = val.replace(/[^0-9]/g, '');
             this.anggaranRows[index].nominal = n ? parseInt(n) : 0;
@@ -427,7 +440,7 @@ function kegiatanForm() {
             this.paguDetails.forEach(d => {
                 // sisa_tersedia = nominal pagu akun - sudah terpakai kegiatan lain
                 this.paguNamaAkun[d.id] = {
-                    nama:           d.nama_komponen ? `${d.nama_komponen} - ${d.nama_akun}` : d.nama_akun,
+                    nama:           this.buildPaguDetailLabel(d),
                     nominal:        parseFloat(d.nominal),        // pagu asli akun
                     sudahTerpakai:  parseFloat(d.sudah_terpakai), // terpakai kegiatan lain
                     sisaTersedia:   parseFloat(d.sisa_tersedia),  // yg masih bisa dipakai

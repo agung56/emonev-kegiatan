@@ -97,23 +97,30 @@
             <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
                     <h2 class="text-sm font-black text-slate-700 dark:text-white uppercase tracking-widest">Penggunaan Anggaran</h2>
-                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Pagu: {{ $kegiatan->pagu?->kegiatan ?? '-' }}</p>
+                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Program: {{ $kegiatan->pagu?->program_label ?? '-' }}</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-white/5">
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Komponen</th>
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Nama Akun</th>
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Pagu Akun</th>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Hierarki</th>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Detail</th>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Pagu Detail</th>
                                 <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Digunakan</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-white/5">
                             @forelse($kegiatan->anggarans as $ang)
                             <tr>
-                                <td class="px-6 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400">{{ $ang->paguDetail->komponen?->nama_komponen ?? '-' }}</td>
-                                <td class="px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $ang->paguDetail->nama_akun ?? '-' }}</td>
+                                <td class="px-6 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                    {{ collect([
+                                        $ang->paguDetail->komponen?->nama_kegiatan_label,
+                                        $ang->paguDetail->ro,
+                                        $ang->paguDetail->komponen_label,
+                                        $ang->paguDetail->sub_komponen,
+                                    ])->filter()->implode(' / ') ?: '-' }}
+                                </td>
+                                <td class="px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{{ $ang->paguDetail->detail_label ?? '-' }}</td>
                                 <td class="px-6 py-3 text-sm text-slate-500">Rp {{ number_format($ang->paguDetail->nominal ?? 0, 0, ',', '.') }}</td>
                                 <td class="px-6 py-3 text-sm font-black text-brand-primary text-right">Rp {{ number_format($ang->nominal_digunakan, 0, ',', '.') }}</td>
                             </tr>

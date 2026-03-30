@@ -115,13 +115,13 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                 </div>
             </div>
 
-            {{-- Per pagu --}}
+            {{-- Per program --}}
             <div class="divide-y divide-slate-50 dark:divide-white/5">
                 @forelse($penyerapanPerPagu as $pg)
                 <div class="px-6 py-4">
                     <div class="flex items-start justify-between gap-4 mb-2">
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ $pg['kegiatan'] }}</p>
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ $pg['program'] }}</p>
                             <div class="flex items-center gap-3 mt-0.5">
                                 <span class="text-[10px] text-slate-400 font-medium">Pagu: Rp {{ number_format($pg['pagu'], 0, ',', '.') }}</span>
                                 <span class="text-[10px] text-slate-400">·</span>
@@ -414,7 +414,7 @@ $triwulanSekarang = (int) $tahun === $tahunSekarang ? (int) ceil(date('n') / 3) 
                             {{ $kg->nama_kegiatan }}
                         </p>
                         <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span class="text-[10px] text-slate-400 font-medium">{{ $kg->pagu?->kegiatan ?? '-' }}</span>
+                            <span class="text-[10px] text-slate-400 font-medium">{{ $kg->pagu?->program_label ?? '-' }}</span>
                             @php $totalKg = $kg->anggarans->sum('nominal_digunakan'); @endphp
                             @if($totalKg > 0)
                             <span class="text-[10px] text-brand-primary font-black">Rp {{ number_format($totalKg, 0, ',', '.') }}</span>

@@ -96,7 +96,7 @@ class DashboardController extends Controller
                     ? round(($realisasi / $p->total_nominal) * 100, 1)
                     : 0;
                 return [
-                    'kegiatan'  => $p->kegiatan,
+                    'program'   => $p->program_label,
                     'pagu'      => $p->total_nominal,
                     'realisasi' => $realisasi,
                     'sisa'      => $sisa,

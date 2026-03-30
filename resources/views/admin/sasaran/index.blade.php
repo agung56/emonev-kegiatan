@@ -2,6 +2,9 @@
 @section('page_title', 'Master Sasaran')
 
 @section('content')
+@php
+    $canManageSasaran = auth()->user()->role === 'admin';
+@endphp
 <div class="p-6 space-y-6" x-data="{
     openModal: false,
     editMode: false,
@@ -111,11 +114,13 @@
             <h1 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Master Sasaran</h1>
             <p class="text-sm text-slate-500 font-medium">Manajemen sasaran strategis dan indikator kinerja</p>
         </div>
+        @if($canManageSasaran)
         <button @click="toggleModal(false)"
                 class="flex items-center justify-center gap-2 px-6 py-3 bg-brand-primary text-brand-black text-xs font-black rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer uppercase tracking-widest">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
             TAMBAH SASARAN
         </button>
+        @endif
     </div>
 
     {{-- Filters --}}
@@ -155,7 +160,9 @@
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kepemilikan</th>
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Indikator</th>
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[170px] text-center">Status</th>
+                        @if($canManageSasaran)
                         <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-white/5">
@@ -193,6 +200,7 @@
 
                         {{-- Kolom Status: tombol toggle langsung submit form PATCH --}}
                         <td class="px-6 py-4 text-center">
+                            @if($canManageSasaran)
                             <form action="{{ route('sasaran.toggleStatus', $sasaran->id) }}" method="POST">
                                 @csrf
                                 @method('PATCH')
@@ -216,8 +224,18 @@
                                     </span>
                                 </button>
                             </form>
+                            @else
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase transition-all
+                                {{ $sasaran->is_aktif
+                                    ? 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400'
+                                    : 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-400' }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ $sasaran->is_aktif ? 'bg-green-500' : 'bg-slate-400' }}"></span>
+                                {{ $sasaran->is_aktif ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                            @endif
                         </td>
 
+                        @if($canManageSasaran)
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-1">
                                 <button @click="toggleModal(true, {{ $sasaran->setRelation('indikators', $sasaran->indikators)->toJson() }})"
@@ -225,7 +243,8 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
                                 <form action="{{ route('sasaran.destroy', $sasaran->id) }}" method="POST"
-                                      onsubmit="return confirm('Yakin ingin menghapus sasaran ini beserta seluruh indikatornya?')">
+                                      data-confirm="Yakin ingin menghapus sasaran ini beserta seluruh indikatornya?"
+                                      data-confirm-title="Hapus Sasaran">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all">
@@ -234,6 +253,7 @@
                                 </form>
                             </div>
                         </td>
+                        @endif
                     </tr>
 
                     {{-- Sub Table (Expanded) --}}
@@ -242,7 +262,7 @@
                         x-transition:enter-start="opacity-0 -translate-y-2"
                         x-transition:enter-end="opacity-100 translate-y-0"
                         class="bg-slate-50/30 dark:bg-white/[0.02]">
-                        <td colspan="6" class="px-12 py-4">
+                        <td colspan="{{ $canManageSasaran ? 6 : 5 }}" class="px-12 py-4">
                             <div class="overflow-hidden rounded-2xl border border-slate-100 dark:border-white/5 bg-white dark:bg-slate-800/50 shadow-inner">
                                 <table class="w-full text-left">
                                     <thead class="bg-slate-50 dark:bg-white/5">
@@ -273,7 +293,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-16 text-center text-slate-400 font-bold text-sm">
+                        <td colspan="{{ $canManageSasaran ? 6 : 5 }}" class="px-6 py-16 text-center text-slate-400 font-bold text-sm">
                             Belum ada data sasaran.
                         </td>
                     </tr>
@@ -283,6 +303,7 @@
         </div>
     </div>
 
+    @if($canManageSasaran)
     {{-- Modal --}}
     <template x-teleport="body">
         <div x-show="openModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4" x-cloak>
@@ -441,6 +462,7 @@
             </div>
         </div>
     </template>
+    @endif
 </div>
 
 <script>

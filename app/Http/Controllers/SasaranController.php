@@ -17,6 +17,8 @@ class SasaranController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
         $validated = $this->validateSasaran($request);
         $sasaran = Sasaran::create(Arr::only($validated, [
             'nama_sasaran',
@@ -31,6 +33,8 @@ class SasaranController extends Controller
 
     public function update(Request $request, Sasaran $sasaran)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
         $validated = $this->validateSasaran($request);
         $sasaran->update(Arr::only($validated, [
             'nama_sasaran',
@@ -45,12 +49,16 @@ class SasaranController extends Controller
 
     public function toggleStatus(Sasaran $sasaran)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
         $sasaran->update(['is_aktif' => !$sasaran->is_aktif]);
         return back()->with('success', 'Status sasaran berhasil diubah.');
     }
 
     public function destroy(Sasaran $sasaran)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
         $sasaran->delete();
         return back();
     }

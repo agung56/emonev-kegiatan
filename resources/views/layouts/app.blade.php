@@ -43,6 +43,7 @@
 
         <div class="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             @include('layouts.header')
+            @include('layouts.confirm-dialog')
 
             <main class="p-6">
                 @yield('content')

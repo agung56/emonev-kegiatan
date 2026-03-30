@@ -64,12 +64,6 @@
                 <span x-show="!sidebarCollapsed" class="ml-4 font-bold text-sm whitespace-nowrap">Manajemen User</span>
             </a>
 
-            <a href="{{ route('sasaran.index') }}" 
-               class="flex items-center p-3 rounded-xl transition-all {{ request()->routeIs('sasaran.*') ? 'bg-brand-primary text-brand-black' : 'hover:bg-white/5 text-slate-400 hover:text-white' }} group" 
-               title="Master Sasaran">
-                <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <span x-show="!sidebarCollapsed" class="ml-4 font-bold text-sm whitespace-nowrap">Master Sasaran</span>
-            </a>
         @endif
 
         <div class="pt-6 pb-2">
@@ -96,6 +90,13 @@
            title="Laporan Rekap">
             <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             <span x-show="!sidebarCollapsed" class="ml-4 font-bold text-sm whitespace-nowrap">Rekap Kegiatan</span>
+        </a>
+
+        <a href="{{ route('sasaran.index') }}" 
+           class="flex items-center p-3 rounded-xl transition-all {{ request()->routeIs('sasaran.*') ? 'bg-brand-primary text-brand-black' : 'hover:bg-white/5 text-slate-400 hover:text-white' }} group" 
+           title="Data Sasaran">
+            <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span x-show="!sidebarCollapsed" class="ml-4 font-bold text-sm whitespace-nowrap">Data Sasaran</span>
         </a>
     </nav>
 </aside>

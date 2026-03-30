@@ -6,7 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaguDetail extends Model
 {
-    protected $fillable = ['pagu_id', 'pagu_komponen_id', 'nama_akun', 'nominal'];
+    protected $fillable = [
+        'pagu_id',
+        'pagu_komponen_id',
+        'ro',
+        'komponen_label',
+        'sub_komponen',
+        'detail',
+        'nama_akun',
+        'nominal',
+    ];
 
     public function pagu()
     {
@@ -21,5 +30,10 @@ class PaguDetail extends Model
     public function kegiatanAnggarans()
     {
         return $this->hasMany(KegiatanAnggaran::class);
+    }
+
+    public function getDetailLabelAttribute(): string
+    {
+        return $this->detail ?: $this->nama_akun;
     }
 }

@@ -284,6 +284,8 @@ class KegiatanController extends Controller
 
     public function destroy(Kegiatan $kegiatan)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
         DB::beginTransaction();
         try {
             // Hapus semua file fisik
@@ -319,8 +321,8 @@ class KegiatanController extends Controller
         $tahunAnggaran = $pagu->tahun_anggaran;
 
         $details = \App\Models\PaguDetail::where('pagu_id', $paguId)
-            ->with('komponen:id,nama_komponen')
-            ->select('id', 'pagu_komponen_id', 'nama_akun', 'nominal')
+            ->with('komponen:id,nama_kegiatan,nama_komponen')
+            ->select('id', 'pagu_komponen_id', 'ro', 'komponen_label', 'sub_komponen', 'detail', 'nama_akun', 'nominal')
             ->get()
             ->map(function ($d) use ($excludeKegiatanId, $tahunAnggaran) {
                 // Hitung total terpakai dari SEMUA kegiatan yang:
@@ -338,7 +340,9 @@ class KegiatanController extends Controller
 
                 $d->sudah_terpakai = (float) $sudahTerpakai;
                 $d->sisa_tersedia  = (float) $d->nominal - $sudahTerpakai;
-                $d->nama_komponen  = $d->komponen?->nama_komponen;
+                $d->nama_kegiatan  = $d->komponen?->nama_kegiatan_label;
+                $d->nama_komponen  = $d->komponen_label;
+                $d->nama_akun      = $d->detail_label;
                 return $d;
             });
 
