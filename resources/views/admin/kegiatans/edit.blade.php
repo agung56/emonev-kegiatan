@@ -450,21 +450,25 @@
 function kegiatanForm() {
     return {
         tahunAnggaran: '{{ old('tanggal_mulai') ? \Carbon\Carbon::parse(old('tanggal_mulai'))->format('Y') : old('tahun_anggaran', $kegiatan->tanggal_mulai->format('Y')) }}',
-        paguDetails: @json(($kegiatan->pagu?->details ?? collect())->map(fn($d) => [
-            'id' => $d->id,
-            'pagu_komponen_id' => $d->pagu_komponen_id,
-            'nama_kegiatan' => $d->komponen?->nama_kegiatan_label,
-            'ro' => $d->ro,
-            'nama_komponen' => $d->komponen_label,
-            'sub_komponen' => $d->sub_komponen,
-            'nama_akun' => $d->detail_label,
-            'nominal' => $d->nominal,
-            'sudah_terpakai' => 0,
-            'sisa_tersedia' => $d->nominal,
-        ])->values()),
+        paguDetails: @php
+            $paguDetailsData = ($kegiatan->pagu?->details ?? collect())->map(fn($d) => [
+                'id' => $d->id,
+                'pagu_komponen_id' => $d->pagu_komponen_id,
+                'nama_kegiatan' => $d->komponen?->nama_kegiatan_label ?? '',
+                'ro' => $d->ro ?? '',
+                'nama_komponen' => $d->komponen_label ?? '',
+                'sub_komponen' => $d->sub_komponen ?? '',
+                'nama_akun' => $d->detail_label ?? '',
+                'nominal' => $d->nominal ?? 0,
+                'sudah_terpakai' => 0,
+                'sisa_tersedia' => $d->nominal ?? 0,
+            ])->values();
+        @endphp @json($paguDetailsData),
         indikators:  @json($kegiatan->sasaran->indikators ?? []),
         selectedIndikatorIds: @json($kegiatan->indikators->pluck('id')),
-        anggaranRows: @json($kegiatan->anggarans->map(fn($a) => ['id' => $a->id, 'pagu_detail_id' => $a->pagu_detail_id, 'nominal' => $a->nominal_digunakan])),
+        anggaranRows: @php
+            $anggaranRowsData = $kegiatan->anggarans->map(fn($a) => ['id' => $a->id, 'pagu_detail_id' => $a->pagu_detail_id, 'nominal' => $a->nominal_digunakan]);
+        @endphp @json($anggaranRowsData),
 
         // Init paguTotal & paguNamaAkun — filter tahun anggaran + exclude kegiatan ini
         paguTotal: @php
