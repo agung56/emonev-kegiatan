@@ -46,6 +46,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('pagu', PaguController::class)->except(['store', 'update', 'destroy']);
     Route::get('kegiatans/{kegiatanId}/dokumen/{dokumenId}', [KegiatanController::class, 'showDokumen'])
         ->name('kegiatans.dokumens.show');
+    Route::get('kegiatans/{kegiatan}/dokumen-zip', [KegiatanController::class, 'downloadDokumenZip'])
+        ->name('kegiatans.dokumens.zip');
     Route::resource('kegiatans', KegiatanController::class)->except(['destroy']);
     Route::get('api/sasaran/{id}/indikators', [KegiatanController::class, 'getIndikators']);
     Route::get('api/pagu/{id}/details',       [KegiatanController::class, 'getPaguDetails']);

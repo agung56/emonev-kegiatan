@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use ZipArchive;
 
 class KegiatanController extends Controller
 {
@@ -222,6 +224,60 @@ class KegiatanController extends Controller
         $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, $dokumen->nama_file);
 
         return $response;
+    }
+
+    public function downloadDokumenZip(Kegiatan $kegiatan)
+    {
+        $kegiatan->loadMissing('dokumens');
+
+        abort_if($kegiatan->dokumens->isEmpty(), 404, 'Dokumen kegiatan tidak tersedia.');
+        abort_unless(class_exists(ZipArchive::class), 500, 'Ekstensi ZipArchive tidak tersedia di server.');
+
+        $tempDirectory = storage_path('app/temp');
+        if (!is_dir($tempDirectory)) {
+            mkdir($tempDirectory, 0755, true);
+        }
+
+        $zipFileName = Str::slug($kegiatan->nama_kegiatan) ?: 'kegiatan-' . $kegiatan->id;
+        $zipFilePath = $tempDirectory . DIRECTORY_SEPARATOR . $zipFileName . '-' . now()->format('YmdHis') . '.zip';
+
+        $zip = new ZipArchive();
+        $opened = $zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        abort_unless($opened === true, 500, 'Gagal membuat file ZIP dokumen kegiatan.');
+
+        $usedNames = [];
+        $addedFiles = 0;
+
+        foreach ($kegiatan->dokumens as $dokumen) {
+            $filePath = $dokumen->resolveExistingFilePath();
+
+            if ($filePath === null) {
+                Log::warning('Dokumen kegiatan dilewati saat membuat ZIP karena file tidak ditemukan.', [
+                    'kegiatan_id' => $kegiatan->id,
+                    'dokumen_id' => $dokumen->id,
+                    'nama_file' => $dokumen->nama_file,
+                    'path_file_db' => $dokumen->path_file,
+                ]);
+                continue;
+            }
+
+            $entryName = $this->uniqueZipEntryName($dokumen->nama_file, $usedNames);
+            if ($zip->addFile($filePath, $entryName)) {
+                $addedFiles++;
+            }
+        }
+
+        $zip->close();
+
+        if ($addedFiles < 1) {
+            if (is_file($zipFilePath)) {
+                unlink($zipFilePath);
+            }
+
+            return back()->with('error', 'Tidak ada dokumen yang bisa dimasukkan ke file ZIP.');
+        }
+
+        return response()->download($zipFilePath, $zipFileName . '.zip')->deleteFileAfterSend(true);
     }
 
     public function edit(Kegiatan $kegiatan)
@@ -446,5 +502,32 @@ class KegiatanController extends Controller
             })
             ->values()
             ->all();
+    }
+
+    private function uniqueZipEntryName(string $originalName, array &$usedNames): string
+    {
+        $originalName = trim($originalName);
+        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+        $filename = pathinfo($originalName, PATHINFO_FILENAME);
+
+        $filename = Str::of($filename)
+            ->ascii()
+            ->replaceMatches('/[^A-Za-z0-9._-]+/', '-')
+            ->trim('-_.')
+            ->value();
+
+        $filename = $filename !== '' ? $filename : 'dokumen';
+        $extension = $extension !== '' ? '.' . Str::lower($extension) : '';
+        $candidate = $filename . $extension;
+        $counter = 2;
+
+        while (isset($usedNames[Str::lower($candidate)])) {
+            $candidate = $filename . '-' . $counter . $extension;
+            $counter++;
+        }
+
+        $usedNames[Str::lower($candidate)] = true;
+
+        return $candidate;
     }
 }
