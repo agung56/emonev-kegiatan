@@ -26,10 +26,11 @@ class KegiatanDokumen extends Model
 
     public function normalizedPathFile(): string
     {
-        $path = ltrim(str_replace('\\', '/', $this->path_file), '/');
+        $path = $this->pathFileForLookup();
 
         foreach ([
             'storage/app/public/',
+            'storage/app/',
             'public/storage/',
             'storage/',
             'public/',
@@ -55,15 +56,51 @@ class KegiatanDokumen extends Model
 
     public function filePathCandidates(): array
     {
-        $rawPath = str_replace('\\', '/', $this->path_file);
+        $rawPath = $this->pathFileForLookup();
         $relativePath = $this->normalizedPathFile();
+        $basename = basename($relativePath ?: $rawPath);
 
-        return array_values(array_filter(array_unique([
+        $candidates = [
             $relativePath !== '' ? Storage::disk('public')->path($relativePath) : null,
+            $relativePath !== '' ? storage_path('app/public/' . $relativePath) : null,
+            $relativePath !== '' ? storage_path('app/' . $relativePath) : null,
             $relativePath !== '' ? public_path('storage/' . $relativePath) : null,
             $relativePath !== '' ? public_path($relativePath) : null,
             $rawPath !== '' ? base_path(ltrim($rawPath, '/')) : null,
             Str::startsWith($rawPath, ['/']) || preg_match('/^[A-Za-z]:[\\\\\\/]/', $this->path_file) ? $this->path_file : null,
-        ])));
+            $basename !== '' ? storage_path('app/public/kegiatan_dokumen/' . $basename) : null,
+            $basename !== '' ? storage_path('app/kegiatan_dokumen/' . $basename) : null,
+            $basename !== '' ? public_path('storage/kegiatan_dokumen/' . $basename) : null,
+            $basename !== '' ? public_path('kegiatan_dokumen/' . $basename) : null,
+        ];
+
+        if ($basename !== '') {
+            foreach ([
+                storage_path('app/public/kegiatan_dokumen'),
+                storage_path('app/kegiatan_dokumen'),
+                public_path('storage/kegiatan_dokumen'),
+                public_path('kegiatan_dokumen'),
+            ] as $directory) {
+                if (is_dir($directory)) {
+                    $matches = glob($directory . DIRECTORY_SEPARATOR . '*' . $basename) ?: [];
+                    if (!empty($matches)) {
+                        $candidates = array_merge($candidates, $matches);
+                    }
+                }
+            }
+        }
+
+        return array_values(array_filter(array_unique($candidates)));
+    }
+
+    private function pathFileForLookup(): string
+    {
+        $path = trim(str_replace('\\', '/', (string) $this->path_file));
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            $path = parse_url($path, PHP_URL_PATH) ?: $path;
+        }
+
+        return ltrim($path, '/');
     }
 }
