@@ -318,7 +318,7 @@
 
                         {{-- Aksi --}}
                         <div class="flex items-center gap-1 shrink-0">
-                            <a href="{{ Storage::url($dok->path_file) }}" target="_blank"
+                            <a href="{{ $dok->view_url }}" target="_blank"
                                class="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all" title="Buka file">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                             </a>

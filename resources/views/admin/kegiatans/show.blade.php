@@ -177,7 +177,7 @@
                 </div>
                 <div class="p-4 space-y-2">
                     @forelse($kegiatan->dokumens as $dok)
-                    <a href="{{ Storage::url($dok->path_file) }}" target="_blank"
+                    <a href="{{ $dok->view_url }}" target="_blank"
                        class="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/dok">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0
                             {{ $dok->tipe_file === 'pdf' ? 'bg-red-100 text-red-500' : '' }}

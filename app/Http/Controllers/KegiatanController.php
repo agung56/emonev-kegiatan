@@ -154,6 +154,20 @@ class KegiatanController extends Controller
         return view('admin.kegiatans.show', compact('kegiatan'));
     }
 
+    public function showDokumen(Kegiatan $kegiatan, KegiatanDokumen $dokumen)
+    {
+        abort_unless($dokumen->kegiatan_id === $kegiatan->id, 404);
+        abort_unless(Storage::disk('public')->exists($dokumen->path_file), 404);
+
+        $mimeType = Storage::disk('public')->mimeType($dokumen->path_file) ?: 'application/octet-stream';
+
+        return Storage::disk('public')->response(
+            $dokumen->path_file,
+            $dokumen->nama_file,
+            ['Content-Type' => $mimeType]
+        );
+    }
+
     public function edit(Kegiatan $kegiatan)
     {
         $kegiatan->load(['indikators', 'anggarans.paguDetail.komponen', 'dokumens', 'pagu.details.komponen', 'sasaran.indikators', 'subBagianPelaksana']);
