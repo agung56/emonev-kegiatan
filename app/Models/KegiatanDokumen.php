@@ -19,8 +19,8 @@ class KegiatanDokumen extends Model
     public function getViewUrlAttribute(): string
     {
         return route('kegiatans.dokumens.show', [
-            'kegiatan' => $this->kegiatan_id,
-            'dokumen' => $this->id,
+            'kegiatanId' => $this->kegiatan_id,
+            'dokumenId' => $this->id,
         ]);
     }
 

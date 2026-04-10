@@ -44,7 +44,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Module Kegiatan
     Route::resource('pagu', PaguController::class)->except(['store', 'update', 'destroy']);
-    Route::get('kegiatans/{kegiatan}/dokumen/{dokumen}', [KegiatanController::class, 'showDokumen'])
+    Route::get('kegiatans/{kegiatanId}/dokumen/{dokumenId}', [KegiatanController::class, 'showDokumen'])
         ->name('kegiatans.dokumens.show');
     Route::resource('kegiatans', KegiatanController::class)->except(['destroy']);
     Route::get('api/sasaran/{id}/indikators', [KegiatanController::class, 'getIndikators']);

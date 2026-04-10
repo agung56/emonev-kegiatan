@@ -160,14 +160,39 @@ class KegiatanController extends Controller
         return view('admin.kegiatans.show', compact('kegiatan'));
     }
 
-    public function showDokumen(Kegiatan $kegiatan, KegiatanDokumen $dokumen)
+    public function showDokumen(Request $request, int $kegiatanId, int $dokumenId)
     {
-        abort_unless($dokumen->kegiatan_id === $kegiatan->id, 404);
+        $kegiatan = Kegiatan::find($kegiatanId);
+        $dokumen = KegiatanDokumen::find($dokumenId);
+
+        if (!$kegiatan || !$dokumen || $dokumen->kegiatan_id !== $kegiatan->id) {
+            Log::warning('Dokumen kegiatan gagal di-resolve dari database.', [
+                'requested_kegiatan_id' => $kegiatanId,
+                'requested_dokumen_id' => $dokumenId,
+                'kegiatan_found' => (bool) $kegiatan,
+                'dokumen_found' => (bool) $dokumen,
+                'dokumen_kegiatan_id' => $dokumen?->kegiatan_id,
+            ]);
+
+            if ($request->user()?->role === 'admin' && $request->boolean('debug')) {
+                return response()->json([
+                    'status' => 404,
+                    'message' => 'Dokumen kegiatan gagal di-resolve dari database.',
+                    'requested_kegiatan_id' => $kegiatanId,
+                    'requested_dokumen_id' => $dokumenId,
+                    'kegiatan_found' => (bool) $kegiatan,
+                    'dokumen_found' => (bool) $dokumen,
+                    'dokumen_kegiatan_id' => $dokumen?->kegiatan_id,
+                ], 404);
+            }
+
+            abort(404);
+        }
 
         $filePath = $dokumen->resolveExistingFilePath();
         if ($filePath === null) {
-            Log::warning('Dokumen kegiatan tidak ditemukan di server.', [
-                'kegiatan_id' => $kegiatan->id,
+            $payload = [
+                'kegiatan_id' => $kegiatanId,
                 'dokumen_id' => $dokumen->id,
                 'nama_file' => $dokumen->nama_file,
                 'path_file_db' => $dokumen->path_file,
@@ -177,7 +202,16 @@ class KegiatanController extends Controller
                 'storage_path' => storage_path(),
                 'deploy_root' => dirname(base_path()),
                 'checked_paths' => $dokumen->filePathCandidates(),
-            ]);
+            ];
+
+            Log::warning('Dokumen kegiatan tidak ditemukan di server.', $payload);
+
+            if ($request->user()?->role === 'admin' && $request->boolean('debug')) {
+                return response()->json([
+                    'status' => 404,
+                    'message' => 'Dokumen kegiatan tidak ditemukan di server.',
+                ] + $payload, 404);
+            }
 
             abort(404);
         }
