@@ -42,6 +42,10 @@ class KegiatanController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = $request->user();
+        abort_unless($currentUser !== null, 403);
+
         $input = $request->all();
         $input['anggaran'] = $this->normalizeAnggaran($input['anggaran'] ?? []);
 
@@ -65,12 +69,12 @@ class KegiatanController extends Controller
             'dokumen'                   => 'required|array|min:1',
             'dokumen.*'                 => 'required|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:5120',
         ]);
-        $validator->after(function ($validator) use ($input) {
+        $validator->after(function ($validator) use ($input, $currentUser) {
             if (!empty($input['anggaran']) && empty($input['pagu_id'])) {
                 $validator->errors()->add('pagu_id', 'Pagu anggaran wajib dipilih jika ada pengeluaran anggaran.');
             }
 
-            if (auth()->user()?->role === 'admin' && empty($input['sub_bagian_id'])) {
+            if ($currentUser->role === 'admin' && empty($input['sub_bagian_id'])) {
                 $validator->errors()->add('sub_bagian_id', 'Sub Bagian pelaksana wajib dipilih untuk akun admin.');
             }
         });
@@ -90,10 +94,10 @@ class KegiatanController extends Controller
                 'tanggal_selesai'  => $validated['tanggal_selesai'],
                 'output_kegiatan'  => $validated['output_kegiatan'] ?? null,
                 'kendala_kegiatan' => $validated['kendala_kegiatan'] ?? null,
-                'created_by'       => auth()->id(),
-                'sub_bagian_id'    => auth()->user()?->role === 'admin'
+                'created_by'       => $currentUser->id,
+                'sub_bagian_id'    => $currentUser->role === 'admin'
                     ? ($validated['sub_bagian_id'] ?? null)
-                    : auth()->user()?->sub_bagian_id,
+                    : $currentUser->sub_bagian_id,
             ]);
 
             // Sync indikators (many-to-many)
@@ -168,6 +172,10 @@ class KegiatanController extends Controller
                 'nama_file' => $dokumen->nama_file,
                 'path_file_db' => $dokumen->path_file,
                 'normalized_path' => $dokumen->normalizedPathFile(),
+                'base_path' => base_path(),
+                'public_path' => public_path(),
+                'storage_path' => storage_path(),
+                'deploy_root' => dirname(base_path()),
                 'checked_paths' => $dokumen->filePathCandidates(),
             ]);
 
@@ -193,6 +201,10 @@ class KegiatanController extends Controller
 
     public function update(Request $request, Kegiatan $kegiatan)
     {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = $request->user();
+        abort_unless($currentUser !== null, 403);
+
         $input = $request->all();
         $input['anggaran'] = $this->normalizeAnggaran($input['anggaran'] ?? []);
 
@@ -217,12 +229,12 @@ class KegiatanController extends Controller
             'hapus_dokumen.*'           => 'exists:kegiatan_dokumens,id',
             'dokumen.*'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx|max:5120',
         ]);
-        $validator->after(function ($validator) use ($request, $kegiatan, $input) {
+        $validator->after(function ($validator) use ($request, $kegiatan, $input, $currentUser) {
             if (!empty($input['anggaran']) && empty($input['pagu_id'])) {
                 $validator->errors()->add('pagu_id', 'Pagu anggaran wajib dipilih jika ada pengeluaran anggaran.');
             }
 
-            if (auth()->user()?->role === 'admin' && empty($input['sub_bagian_id'])) {
+            if ($currentUser->role === 'admin' && empty($input['sub_bagian_id'])) {
                 $validator->errors()->add('sub_bagian_id', 'Sub Bagian pelaksana wajib dipilih untuk akun admin.');
             }
 
@@ -250,9 +262,9 @@ class KegiatanController extends Controller
                 'tanggal_selesai'  => $validated['tanggal_selesai'],
                 'output_kegiatan'  => $validated['output_kegiatan'] ?? null,
                 'kendala_kegiatan' => $validated['kendala_kegiatan'] ?? null,
-                'sub_bagian_id'    => auth()->user()?->role === 'admin'
+                'sub_bagian_id'    => $currentUser->role === 'admin'
                     ? ($validated['sub_bagian_id'] ?? null)
-                    : (auth()->user()?->sub_bagian_id ?? $kegiatan->sub_bagian_id),
+                    : ($currentUser->sub_bagian_id ?? $kegiatan->sub_bagian_id),
             ]);
 
             // Sync indikators
@@ -315,7 +327,9 @@ class KegiatanController extends Controller
 
     public function destroy(Kegiatan $kegiatan)
     {
-        abort_unless(auth()->user()?->role === 'admin', 403);
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = request()->user();
+        abort_unless($currentUser?->role === 'admin', 403);
 
         DB::beginTransaction();
         try {

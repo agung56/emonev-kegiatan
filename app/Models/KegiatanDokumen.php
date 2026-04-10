@@ -59,6 +59,7 @@ class KegiatanDokumen extends Model
         $rawPath = $this->pathFileForLookup();
         $relativePath = $this->normalizedPathFile();
         $basename = basename($relativePath ?: $rawPath);
+        $deployRoot = dirname(base_path());
 
         $candidates = [
             $relativePath !== '' ? Storage::disk('public')->path($relativePath) : null,
@@ -66,12 +67,16 @@ class KegiatanDokumen extends Model
             $relativePath !== '' ? storage_path('app/' . $relativePath) : null,
             $relativePath !== '' ? public_path('storage/' . $relativePath) : null,
             $relativePath !== '' ? public_path($relativePath) : null,
+            $relativePath !== '' ? $deployRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $relativePath : null,
+            $relativePath !== '' ? $deployRoot . DIRECTORY_SEPARATOR . $relativePath : null,
             $rawPath !== '' ? base_path(ltrim($rawPath, '/')) : null,
             Str::startsWith($rawPath, ['/']) || preg_match('/^[A-Za-z]:[\\\\\\/]/', $this->path_file) ? $this->path_file : null,
             $basename !== '' ? storage_path('app/public/kegiatan_dokumen/' . $basename) : null,
             $basename !== '' ? storage_path('app/kegiatan_dokumen/' . $basename) : null,
             $basename !== '' ? public_path('storage/kegiatan_dokumen/' . $basename) : null,
             $basename !== '' ? public_path('kegiatan_dokumen/' . $basename) : null,
+            $basename !== '' ? $deployRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'kegiatan_dokumen' . DIRECTORY_SEPARATOR . $basename : null,
+            $basename !== '' ? $deployRoot . DIRECTORY_SEPARATOR . 'kegiatan_dokumen' . DIRECTORY_SEPARATOR . $basename : null,
         ];
 
         if ($basename !== '') {
@@ -80,6 +85,8 @@ class KegiatanDokumen extends Model
                 storage_path('app/kegiatan_dokumen'),
                 public_path('storage/kegiatan_dokumen'),
                 public_path('kegiatan_dokumen'),
+                $deployRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'kegiatan_dokumen',
+                $deployRoot . DIRECTORY_SEPARATOR . 'kegiatan_dokumen',
             ] as $directory) {
                 if (is_dir($directory)) {
                     $matches = glob($directory . DIRECTORY_SEPARATOR . '*' . $basename) ?: [];
