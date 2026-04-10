@@ -11,8 +11,10 @@ use App\Models\SubBagian;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class KegiatanController extends Controller
 {
@@ -157,15 +159,27 @@ class KegiatanController extends Controller
     public function showDokumen(Kegiatan $kegiatan, KegiatanDokumen $dokumen)
     {
         abort_unless($dokumen->kegiatan_id === $kegiatan->id, 404);
-        abort_unless(Storage::disk('public')->exists($dokumen->path_file), 404);
 
-        $mimeType = Storage::disk('public')->mimeType($dokumen->path_file) ?: 'application/octet-stream';
+        $filePath = $dokumen->resolveExistingFilePath();
+        if ($filePath === null) {
+            Log::warning('Dokumen kegiatan tidak ditemukan di server.', [
+                'kegiatan_id' => $kegiatan->id,
+                'dokumen_id' => $dokumen->id,
+                'nama_file' => $dokumen->nama_file,
+                'path_file_db' => $dokumen->path_file,
+                'normalized_path' => $dokumen->normalizedPathFile(),
+                'checked_paths' => $dokumen->filePathCandidates(),
+            ]);
 
-        return Storage::disk('public')->response(
-            $dokumen->path_file,
-            $dokumen->nama_file,
-            ['Content-Type' => $mimeType]
-        );
+            abort(404);
+        }
+
+        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+
+        $response = response()->file($filePath, ['Content-Type' => $mimeType]);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, $dokumen->nama_file);
+
+        return $response;
     }
 
     public function edit(Kegiatan $kegiatan)
