@@ -165,7 +165,7 @@ class KegiatanController extends Controller
         $kegiatan = Kegiatan::find($kegiatanId);
         $dokumen = KegiatanDokumen::find($dokumenId);
 
-        if (!$kegiatan || !$dokumen || $dokumen->kegiatan_id !== $kegiatan->id) {
+        if (!$kegiatan || !$dokumen || (int) $dokumen->kegiatan_id !== (int) $kegiatan->id) {
             Log::warning('Dokumen kegiatan gagal di-resolve dari database.', [
                 'requested_kegiatan_id' => $kegiatanId,
                 'requested_dokumen_id' => $dokumenId,

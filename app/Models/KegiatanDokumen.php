@@ -11,6 +11,11 @@ class KegiatanDokumen extends Model
 {
     protected $fillable = ['kegiatan_id', 'nama_file', 'path_file', 'tipe_file', 'ukuran_file'];
 
+    protected $casts = [
+        'kegiatan_id' => 'integer',
+        'ukuran_file' => 'integer',
+    ];
+
     public function kegiatan(): BelongsTo
     {
         return $this->belongsTo(Kegiatan::class);
