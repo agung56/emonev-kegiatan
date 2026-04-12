@@ -127,6 +127,14 @@
                 <button type="submit" class="w-full bg-brand-primary hover:bg-brand-primaryHover text-white font-extrabold py-4 rounded-2xl transition-all shadow-lg shadow-orange-500/10 active:scale-[0.97] text-xs uppercase tracking-widest">
                     Masuk Ke Sistem
                 </button>
+
+                <a href="{{ route('panduan', ['from' => 'login']) }}" target="_blank" rel="noopener noreferrer"
+                   class="w-full inline-flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 text-slate-700 dark:text-slate-100 font-extrabold py-4 rounded-2xl transition-all hover:border-brand-primary hover:text-brand-primary text-xs uppercase tracking-widest">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5 4.462 5 2 6.79 2 9v11c0-2.21 2.462-4 5.5-4 1.746 0 3.332.477 4.5 1.253m0-11C13.168 5.477 14.754 5 16.5 5 19.538 5 22 6.79 22 9v11c0-2.21-2.462-4-5.5-4-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    Buku Panduan
+                </a>
             </form>
 
             <div class="w-full text-center">

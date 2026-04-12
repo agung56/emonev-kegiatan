@@ -19,6 +19,16 @@ Route::get('/', function () {
 // Proses Login & Logout
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::get('/panduan/pdf-download', function () {
+    $path = public_path('assets/Buku_Panduan_EMONEV_KPU_Pasuruan.pdf');
+
+    abort_unless(file_exists($path), 404);
+
+    return response()->download($path, 'Buku_Panduan_EMONEV_KPU_Pasuruan.pdf', [
+        'Content-Type' => 'application/pdf',
+    ]);
+})->name('panduan.pdf.download');
+Route::view('/panduan', 'panduan.index')->name('panduan');
 
 Route::middleware(['auth'])->group(function () {
     // Satu pintu dashboard

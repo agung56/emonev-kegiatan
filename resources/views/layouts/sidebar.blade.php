@@ -99,6 +99,20 @@
             <span x-show="!sidebarCollapsed" class="ml-4 font-bold text-sm whitespace-nowrap">Data Sasaran</span>
         </a>
     </nav>
+
+    <div class="border-t border-white/10 p-3">
+        <a href="{{ route('panduan', ['from' => 'sidebar']) }}" target="_blank" rel="noopener noreferrer"
+           class="flex items-center rounded-xl border border-white/10 bg-white/5 p-3 text-slate-300 transition-all hover:border-brand-primary/40 hover:bg-brand-primary hover:text-brand-black group"
+           title="Buku Panduan">
+            <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5 4.462 5 2 6.79 2 9v11c0-2.21 2.462-4 5.5-4 1.746 0 3.332.477 4.5 1.253m0-11C13.168 5.477 14.754 5 16.5 5 19.538 5 22 6.79 22 9v11c0-2.21-2.462-4-5.5-4-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            <div x-show="!sidebarCollapsed" class="ml-4 min-w-0">
+                <div class="font-bold text-sm whitespace-nowrap">Buku Panduan</div>
+                <div class="text-[10px] uppercase tracking-[0.18em] text-slate-500 group-hover:text-brand-black/70 whitespace-nowrap">Lihat Cara Penggunaan</div>
+            </div>
+        </a>
+    </div>
 </aside>
 
 <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-20 md:hidden" 
